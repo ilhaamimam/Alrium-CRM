@@ -1,47 +1,81 @@
 import axios from "axios";
+
 import {
   useState,
   type FormEvent,
 } from "react";
 
-import { createCompany } from "./company.api";
+import {
+  createCompany,
+} from "./company.api";
+
 
 interface Props {
   onCreated: () => void;
 }
 
+
 export default function CompanyForm({
   onCreated,
 }: Props) {
-  const [name, setName] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [website, setWebsite] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [notes, setNotes] = useState("");
+  const [name, setName] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [industry, setIndustry] =
+    useState("");
+
+  const [website, setWebsite] =
+    useState("");
+
+  const [phone, setPhone] =
+    useState("");
+
+  const [address, setAddress] =
+    useState("");
+
+  const [notes, setNotes] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
 
   const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
+    event:
+      FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     setError("");
+
     setLoading(true);
+
 
     try {
       await createCompany({
-        name,
-        industry,
-        website,
-        phone,
-        address,
-        notes,
+        name:
+          name.trim(),
+
+        industry:
+          industry.trim(),
+
+        website:
+          website.trim(),
+
+        phone:
+          phone.trim(),
+
+        address:
+          address.trim(),
+
+        notes:
+          notes.trim(),
       });
 
-      // Clear form after successful creation
+
       setName("");
       setIndustry("");
       setWebsite("");
@@ -49,15 +83,19 @@ export default function CompanyForm({
       setAddress("");
       setNotes("");
 
-      // Tell CompaniesPage to reload companies
+
       onCreated();
+
     } catch (error) {
       console.error(
-        "Create company error:",
+        "CREATE COMPANY ERROR:",
         error
       );
 
-      if (axios.isAxiosError(error)) {
+
+      if (
+        axios.isAxiosError(error)
+      ) {
         setError(
           error.response?.data?.message ||
             error.message ||
@@ -68,99 +106,162 @@ export default function CompanyForm({
           "Unable to create company"
         );
       }
+
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <h2>Add Company</h2>
 
-      <div>
-        <label>Company Name</label>
+  return (
+    <form
+      className="form-grid"
+      onSubmit={handleSubmit}
+    >
+
+      <div className="form-group form-group-full">
+
+        <h2 className="card-title">
+          Add Company
+        </h2>
+
+      </div>
+
+
+      <div className="form-group form-group-full">
+
+        <label>
+          Company Name
+        </label>
 
         <input
           type="text"
           value={name}
           onChange={(event) =>
-            setName(event.target.value)
+            setName(
+              event.target.value
+            )
           }
           required
         />
+
       </div>
 
-      <div>
-        <label>Industry</label>
+
+      <div className="form-group">
+
+        <label>
+          Industry
+        </label>
 
         <input
           type="text"
           value={industry}
           onChange={(event) =>
-            setIndustry(event.target.value)
+            setIndustry(
+              event.target.value
+            )
           }
         />
+
       </div>
 
-      <div>
-        <label>Website</label>
+
+      <div className="form-group">
+
+        <label>
+          Website
+        </label>
 
         <input
           type="text"
           value={website}
           onChange={(event) =>
-            setWebsite(event.target.value)
+            setWebsite(
+              event.target.value
+            )
           }
         />
+
       </div>
 
-      <div>
-        <label>Phone</label>
+
+      <div className="form-group">
+
+        <label>
+          Phone
+        </label>
 
         <input
           type="text"
           value={phone}
           onChange={(event) =>
-            setPhone(event.target.value)
+            setPhone(
+              event.target.value
+            )
           }
         />
+
       </div>
 
-      <div>
-        <label>Address</label>
+
+      <div className="form-group">
+
+        <label>
+          Address
+        </label>
 
         <input
           type="text"
           value={address}
           onChange={(event) =>
-            setAddress(event.target.value)
+            setAddress(
+              event.target.value
+            )
           }
         />
+
       </div>
 
-      <div>
-        <label>Notes</label>
+
+      <div className="form-group form-group-full">
+
+        <label>
+          Notes
+        </label>
 
         <textarea
           value={notes}
           onChange={(event) =>
-            setNotes(event.target.value)
+            setNotes(
+              event.target.value
+            )
           }
         />
+
       </div>
 
+
       {error && (
-        <p>{error}</p>
+        <p className="error-message form-group-full">
+          {error}
+        </p>
       )}
 
-      <button
-        type="submit"
-        disabled={loading}
-      >
-        {loading
-          ? "Saving..."
-          : "Create Company"}
-      </button>
+
+      <div className="button-row form-group-full">
+
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Creating..."
+            : "Create Company"}
+        </button>
+
+      </div>
+
     </form>
   );
 }

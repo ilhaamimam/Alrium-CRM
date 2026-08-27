@@ -14,42 +14,59 @@ import {
   fetchCompanyById,
 } from "./company.api";
 
-import CompanyEditForm from "./CompanyEditForm";
+import CompanyEditForm
+  from "./CompanyEditForm";
 
 import type {
   Company,
 } from "./company.types";
 
+import "./companies.css";
+
 
 export default function CompanyDetailsPage() {
+  const {
+    id,
+  } =
+    useParams<{
+      id: string;
+    }>();
 
-  const { id } =
-    useParams<{ id: string }>();
+
+  const [
+    company,
+    setCompany,
+  ] =
+    useState<Company | null>(
+      null
+    );
 
 
-  const [company, setCompany] =
-    useState<Company | null>(null);
-
-
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
 
-  const [error, setError] =
-    useState("");
-
-
-  const [editing, setEditing] =
+  const [
+    editing,
+    setEditing,
+  ] =
     useState(false);
 
 
-  useEffect(() => {
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
 
+
+  useEffect(() => {
     const loadCompany =
       async () => {
-
         if (!id) {
-
           setError(
             "Company ID is missing"
           );
@@ -61,9 +78,6 @@ export default function CompanyDetailsPage() {
 
 
         try {
-
-          setError("");
-
           const data =
             await fetchCompanyById(
               id
@@ -72,9 +86,8 @@ export default function CompanyDetailsPage() {
           setCompany(data);
 
         } catch (error) {
-
           console.error(
-            "Load company error:",
+            "LOAD COMPANY ERROR:",
             error
           );
 
@@ -84,24 +97,18 @@ export default function CompanyDetailsPage() {
               error
             )
           ) {
-
             setError(
               error.response?.data?.message ||
-              "Unable to load company"
+                "Unable to load company"
             );
-
           } else {
-
             setError(
               "Unable to load company"
             );
-
           }
 
         } finally {
-
           setLoading(false);
-
         }
       };
 
@@ -113,21 +120,27 @@ export default function CompanyDetailsPage() {
 
   if (loading) {
     return (
-      <p>
-        Loading company...
-      </p>
+      <div className="page-shell">
+
+        <div className="empty-state">
+          Loading company...
+        </div>
+
+      </div>
     );
   }
 
 
   if (error) {
     return (
-      <div>
+      <div className="page-shell">
 
-        <p>{error}</p>
+        <p className="error-message">
+          {error}
+        </p>
 
         <Link to="/companies">
-          Back to Companies
+          ← Back to Companies
         </Link>
 
       </div>
@@ -137,36 +150,42 @@ export default function CompanyDetailsPage() {
 
   if (!company) {
     return (
-      <p>
-        Company not found.
-      </p>
+      <div className="page-shell">
+
+        <div className="empty-state">
+          Company not found.
+        </div>
+
+      </div>
     );
   }
 
 
   if (editing) {
     return (
-      <div>
+      <div className="page-shell">
 
-        <CompanyEditForm
-          company={company}
+        <div className="card">
 
-          onUpdated={(
-            updatedCompany
-          ) => {
+          <CompanyEditForm
+            company={company}
+            onUpdated={(
+              updated
+            ) => {
+              setCompany(
+                updated
+              );
 
-            setCompany(
-              updatedCompany
-            );
+              setEditing(
+                false
+              );
+            }}
+            onCancel={() =>
+              setEditing(false)
+            }
+          />
 
-            setEditing(false);
-
-          }}
-
-          onCancel={() =>
-            setEditing(false)
-          }
-        />
+        </div>
 
       </div>
     );
@@ -174,115 +193,127 @@ export default function CompanyDetailsPage() {
 
 
   return (
-    <div>
+    <div className="page-shell">
 
-      <p>
+      <div className="page-header">
+
         <Link to="/companies">
           ← Back to Companies
         </Link>
-      </p>
 
 
-      <h1>
-        {company.name}
-      </h1>
-
-
-      <button
-        onClick={() =>
-          setEditing(true)
-        }
-      >
-        Edit Company
-      </button>
-
-
-      <hr />
-
-
-      <div>
-
-        <p>
-          <strong>
-            Company Name:
-          </strong>{" "}
-
+        <h1 className="page-title">
           {company.name}
-        </p>
+        </h1>
 
 
-        <p>
-          <strong>
-            Industry:
-          </strong>{" "}
-
-          {company.industry ||
-            "-"}
-        </p>
-
-
-        <p>
-          <strong>
-            Website:
-          </strong>{" "}
-
-          {company.website ||
-            "-"}
-        </p>
-
-
-        <p>
-          <strong>
-            Phone:
-          </strong>{" "}
-
-          {company.phone ||
-            "-"}
-        </p>
-
-
-        <p>
-          <strong>
-            Address:
-          </strong>{" "}
-
-          {company.address ||
-            "-"}
-        </p>
-
-
-        <p>
-          <strong>
-            Notes:
-          </strong>{" "}
-
-          {company.notes ||
-            "-"}
-        </p>
-
-
-        <p>
-          <strong>
-            Created:
-          </strong>{" "}
-
-          {new Date(
-            company.created_at
-          ).toLocaleString()}
-        </p>
-
-
-        <p>
-          <strong>
-            Last Updated:
-          </strong>{" "}
-
-          {new Date(
-            company.updated_at
-          ).toLocaleString()}
+        <p className="page-subtitle">
+          Company details and customer
+          information.
         </p>
 
       </div>
+
+
+      <div className="company-details-actions">
+
+        <button
+          onClick={() =>
+            setEditing(true)
+          }
+        >
+          Edit Company
+        </button>
+
+      </div>
+
+
+      <div className="card">
+
+        <div className="details-grid">
+
+          <Detail
+            label="Industry"
+            value={
+              company.industry
+            }
+          />
+
+          <Detail
+            label="Website"
+            value={
+              company.website
+            }
+          />
+
+          <Detail
+            label="Phone"
+            value={
+              company.phone
+            }
+          />
+
+          <Detail
+            label="Address"
+            value={
+              company.address
+            }
+          />
+
+          <Detail
+            label="Notes"
+            value={
+              company.notes
+            }
+          />
+
+          <Detail
+            label="Created"
+            value={
+              new Date(
+                company.created_at
+              ).toLocaleString()
+            }
+          />
+
+          <Detail
+            label="Last Updated"
+            value={
+              new Date(
+                company.updated_at
+              ).toLocaleString()
+            }
+          />
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+function Detail({
+  label,
+  value,
+}: {
+  label: string;
+  value:
+    string |
+    null |
+    undefined;
+}) {
+  return (
+    <div className="detail-item">
+
+      <span className="detail-label">
+        {label}
+      </span>
+
+      <span className="detail-value">
+        {value || "-"}
+      </span>
 
     </div>
   );

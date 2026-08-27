@@ -16,129 +16,119 @@ interface Props {
 export default function ApprovedLeadBoardTable({
   items,
 }: Props) {
-
   if (
     items.length === 0
   ) {
     return (
-      <p>
+      <div className="empty-state">
         No approved leads on the board.
-      </p>
+      </div>
     );
   }
 
 
   return (
-    <table>
+    <div className="table-wrap">
 
-      <thead>
-        <tr>
-          <th>
-            Lead
-          </th>
+      <table>
 
-          <th>
-            Company
-          </th>
+        <thead>
+          <tr>
+            <th>Lead</th>
 
-          <th>
-            Contact
-          </th>
+            <th>Company</th>
 
-          <th>
-            Budget
-          </th>
+            <th>Contact</th>
 
-          <th>
-            Status
-          </th>
+            <th>Budget</th>
 
-          <th>
-            Planned Start
-          </th>
+            <th>Status</th>
 
-          <th>
-            Planned End
-          </th>
+            <th>Start</th>
 
-          <th>
-            Actions
-          </th>
-        </tr>
-      </thead>
+            <th>End</th>
+
+            <th>Actions</th>
+          </tr>
+        </thead>
 
 
-      <tbody>
+        <tbody>
 
-        {items.map(
-          (item) => (
-            <tr
-              key={
-                item.id
-              }
-            >
+          {items.map(
+            (item) => (
+              <tr key={item.id}>
 
-              <td>
-                {item.name}
-              </td>
+                <td>
+                  {item.name}
+                </td>
 
 
-              <td>
-                {item.leads
-                  ?.companies
-                  ?.name ||
-                  "-"}
-              </td>
+                <td>
+                  {item.leads
+                    ?.companies
+                    ?.name ||
+                    "-"}
+                </td>
 
 
-              <td>
-                {item.leads
-                  ?.contacts
-                  ? `${item.leads.contacts.first_name} ${item.leads.contacts.last_name || ""}`
-                  : "-"}
-              </td>
+                <td>
+                  {item.leads
+                    ?.contacts
+                    ? `${item.leads.contacts.first_name} ${item.leads.contacts.last_name || ""}`
+                    : "-"}
+                </td>
 
 
-              <td>
-                {item.leads
-                  ?.estimated_budget ??
-                  "-"}
-              </td>
+                <td>
+                  {item.leads
+                    ?.estimated_budget ??
+                    "-"}
+                </td>
 
 
-              <td>
-                {item.status}
-              </td>
+                <td>
+                  <span
+                    className={
+                      `board-status status-${item.status}`
+                    }
+                  >
+                    {item.status}
+                  </span>
+                </td>
 
 
-              <td>
-                {item.planned_start_date ||
-                  "-"}
-              </td>
+                <td>
+                  {item.planned_start_date ||
+                    "-"}
+                </td>
 
 
-              <td>
-                {item.planned_end_date ||
-                  "-"}
-              </td>
+                <td>
+                  {item.planned_end_date ||
+                    "-"}
+                </td>
 
 
-              <td>
-                <Link
-                  to={
-                    `/lead-board/${item.id}`
-                  }
-                >
-                  View
-                </Link>
-              </td>
+                <td>
+                  <Link
+                    className="btn btn-secondary"
+                    to={
+                      `/lead-board/${item.id}`
+                    }
+                  >
+                    View
+                  </Link>
+                </td>
 
-            </tr>
-          )
-        )}
+              </tr>
+            )
+          )}
 
-      </tbody>
+        </tbody>
 
-    </table>
+      </table>
+
+    </div>
   );
 }

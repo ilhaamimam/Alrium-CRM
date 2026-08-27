@@ -28,17 +28,15 @@ import type {
   TeamMemberProfile,
 } from "./teamAllocation.types";
 
+import "./teamAllocation.css";
+
 
 export default function TeamAllocationPage() {
-
   const [
     teams,
     setTeams,
   ] =
-    useState<
-      Team[]
-    >([]);
-
+    useState<Team[]>([]);
 
   const [
     members,
@@ -48,7 +46,6 @@ export default function TeamAllocationPage() {
       TeamMemberProfile[]
     >([]);
 
-
   const [
     projects,
     setProjects,
@@ -57,20 +54,17 @@ export default function TeamAllocationPage() {
       AllocationProject[]
     >([]);
 
-
   const [
     loading,
     setLoading,
   ] =
     useState(true);
 
-
   const [
     error,
     setError,
   ] =
     useState("");
-
 
   const [
     refreshKey,
@@ -82,11 +76,8 @@ export default function TeamAllocationPage() {
   const loadData =
     useCallback(
       async () => {
-
         try {
-
           setError("");
-
 
           const [
             teamData,
@@ -102,36 +93,28 @@ export default function TeamAllocationPage() {
             ]);
 
 
-          setTeams(
-            teamData
-          );
-
+          setTeams(teamData);
 
           setMembers(
             memberData
           );
-
 
           setProjects(
             projectData
           );
 
         } catch (error) {
-
           console.error(
-            "LOAD TEAM ALLOCATION DATA ERROR:",
+            "LOAD TEAM ALLOCATION ERROR:",
             error
           );
-
 
           setError(
             "Unable to load Team Allocation Management"
           );
 
         } finally {
-
           setLoading(false);
-
         }
       },
       []
@@ -139,19 +122,13 @@ export default function TeamAllocationPage() {
 
 
   useEffect(() => {
-
     loadData();
-
-  }, [
-    loadData,
-  ]);
+  }, [loadData]);
 
 
   const refreshAll =
     async () => {
-
       await loadData();
-
 
       setRefreshKey(
         (current) =>
@@ -161,93 +138,109 @@ export default function TeamAllocationPage() {
 
 
   if (loading) {
-
     return (
-      <p>
-        Loading Team Allocation...
-      </p>
+      <div className="page-shell">
+
+        <div className="empty-state">
+          Loading Team Allocation...
+        </div>
+
+      </div>
     );
   }
 
 
   return (
-    <div>
+    <div className="page-shell">
 
-      <h1>
-        Team Allocation & Management
-      </h1>
+      <div className="page-header">
 
+        <h1 className="page-title">
+          Team Allocation & Management
+        </h1>
 
-      <p>
-        Senior Manager
-      </p>
+        <p className="page-subtitle">
+          Create teams, manage members,
+          allocate approved leads and
+          maintain project timelines.
+        </p>
+
+      </div>
 
 
       {error && (
-        <p>
+        <p className="error-message">
           {error}
         </p>
       )}
 
 
-      <hr />
+      <div className="team-management-grid">
+
+        <div className="card team-management-section">
+
+          <TeamForm
+            onCreated={
+              refreshAll
+            }
+          />
+
+        </div>
 
 
-      <TeamForm
-        onCreated={
-          refreshAll
-        }
-      />
+        <div className="card team-management-section">
+
+          <TeamMembersManager
+            teams={
+              teams
+            }
+
+            availableMembers={
+              members
+            }
+
+            onChanged={
+              refreshAll
+            }
+          />
+
+        </div>
+
+      </div>
 
 
-      <hr />
+      <div className="card section">
+
+        <ProjectTeamAssignmentForm
+          teams={
+            teams
+          }
+
+          projects={
+            projects
+          }
+
+          onAssigned={
+            refreshAll
+          }
+        />
+
+      </div>
 
 
-      <TeamMembersManager
-        teams={
-          teams
-        }
+      <div className="card section">
 
-        availableMembers={
-          members
-        }
+        <TeamAssignedLeadsTable
+          teams={
+            teams
+          }
 
-        onChanged={
-          refreshAll
-        }
-      />
+          refreshKey={
+            refreshKey
+          }
+        />
 
-
-      <hr />
-
-
-      <ProjectTeamAssignmentForm
-        teams={
-          teams
-        }
-
-        projects={
-          projects
-        }
-
-        onAssigned={
-          refreshAll
-        }
-      />
-
-
-      <hr />
-
-
-      <TeamAssignedLeadsTable
-        teams={
-          teams
-        }
-
-        refreshKey={
-          refreshKey
-        }
-      />
+      </div>
 
     </div>
   );

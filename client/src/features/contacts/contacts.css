@@ -1,0 +1,21 @@
+.contacts-layout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(320px, 400px)
+    minmax(0, 1fr);
+
+  gap: 24px;
+
+  align-items: start;
+}
+
+.contact-name {
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .contacts-layout {
+    grid-template-columns: 1fr;
+  }
+}

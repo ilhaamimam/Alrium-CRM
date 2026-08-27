@@ -41,11 +41,19 @@ interface Props {
 export default function LeadForm({
   onCreated,
 }: Props) {
-  const [companies, setCompanies] =
+  const [
+    companies,
+    setCompanies,
+  ] =
     useState<Company[]>([]);
 
-  const [contacts, setContacts] =
+
+  const [
+    contacts,
+    setContacts,
+  ] =
     useState<Contact[]>([]);
+
 
   const [
     salesRepresentatives,
@@ -56,20 +64,40 @@ export default function LeadForm({
     >([]);
 
 
-  const [companyId, setCompanyId] =
+  const [
+    companyId,
+    setCompanyId,
+  ] =
     useState("");
 
-  const [contactId, setContactId] =
+
+  const [
+    contactId,
+    setContactId,
+  ] =
     useState("");
 
-  const [title, setTitle] =
+
+  const [
+    title,
+    setTitle,
+  ] =
     useState("");
 
-  const [description, setDescription] =
+
+  const [
+    description,
+    setDescription,
+  ] =
     useState("");
 
-  const [source, setSource] =
+
+  const [
+    source,
+    setSource,
+  ] =
     useState("");
+
 
   const [
     estimatedBudget,
@@ -77,11 +105,13 @@ export default function LeadForm({
   ] =
     useState("");
 
+
   const [
     expectedCloseDate,
     setExpectedCloseDate,
   ] =
     useState("");
+
 
   const [
     assignedSalesRepId,
@@ -90,51 +120,81 @@ export default function LeadForm({
     useState("");
 
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(false);
 
-  const [error, setError] =
+
+  const [
+    loadingData,
+    setLoadingData,
+  ] =
+    useState(true);
+
+
+  const [
+    error,
+    setError,
+  ] =
     useState("");
 
 
+  /*
+   * Load Companies,
+   * Contacts,
+   * Sales Representatives
+   */
   useEffect(() => {
-    const loadFormData = async () => {
-      try {
-        const [
-          companiesData,
-          contactsData,
-          repsData,
-        ] =
-          await Promise.all([
-            fetchCompanies(),
-            fetchContacts(),
-            fetchSalesRepresentatives(),
-          ]);
+    const loadFormData =
+      async () => {
+        try {
+          setError("");
+
+          const [
+            companiesData,
+            contactsData,
+            salesRepsData,
+          ] =
+            await Promise.all([
+              fetchCompanies(),
+              fetchContacts(),
+              fetchSalesRepresentatives(),
+            ]);
 
 
-        setCompanies(
-          companiesData
-        );
+          setCompanies(
+            companiesData
+          );
 
-        setContacts(
-          contactsData
-        );
 
-        setSalesRepresentatives(
-          repsData
-        );
+          setContacts(
+            contactsData
+          );
 
-      } catch (error) {
-        console.error(
-          "LOAD LEAD FORM DATA ERROR:",
-          error
-        );
 
-        setError(
-          "Unable to load lead form data"
-        );
-      }
-    };
+          setSalesRepresentatives(
+            salesRepsData
+          );
+
+        } catch (error) {
+          console.error(
+            "LOAD LEAD FORM DATA ERROR:",
+            error
+          );
+
+
+          setError(
+            "Unable to load Lead form data"
+          );
+
+        } finally {
+          setLoadingData(
+            false
+          );
+        }
+      };
 
 
     loadFormData();
@@ -142,6 +202,10 @@ export default function LeadForm({
   }, []);
 
 
+  /*
+   * Only show Contacts
+   * belonging to selected Company.
+   */
   const filteredContacts =
     useMemo(() => {
       if (!companyId) {
@@ -161,6 +225,10 @@ export default function LeadForm({
     ]);
 
 
+  /*
+   * Changing Company must
+   * clear selected Contact.
+   */
   const handleCompanyChange = (
     newCompanyId: string
   ) => {
@@ -168,34 +236,66 @@ export default function LeadForm({
       newCompanyId
     );
 
-    // Reset contact whenever
-    // company changes
     setContactId("");
   };
 
 
+  /*
+   * Create Lead.
+   */
   const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
+    event:
+      FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     setError("");
+
+
+    if (!title.trim()) {
+      setError(
+        "Lead title is required"
+      );
+
+      return;
+    }
+
+
+    if (
+      estimatedBudget &&
+      Number(
+        estimatedBudget
+      ) < 0
+    ) {
+      setError(
+        "Estimated budget cannot be negative"
+      );
+
+      return;
+    }
+
+
     setLoading(true);
 
 
     try {
       await createLead({
         companyId:
-          companyId || undefined,
+          companyId ||
+          undefined,
 
         contactId:
-          contactId || undefined,
+          contactId ||
+          undefined,
 
-        title,
+        title:
+          title.trim(),
 
-        description,
+        description:
+          description.trim(),
 
-        source,
+        source:
+          source.trim(),
 
         estimatedBudget:
           estimatedBudget
@@ -214,6 +314,9 @@ export default function LeadForm({
       });
 
 
+      /*
+       * Clear form after creation.
+       */
       setCompanyId("");
       setContactId("");
       setTitle("");
@@ -224,6 +327,9 @@ export default function LeadForm({
       setAssignedSalesRepId("");
 
 
+      /*
+       * Reload lead list.
+       */
       onCreated();
 
     } catch (error) {
@@ -234,13 +340,18 @@ export default function LeadForm({
 
 
       if (
-        axios.isAxiosError(error)
+        axios.isAxiosError(
+          error
+        )
       ) {
         setError(
-          error.response?.data?.message ||
+          error.response
+            ?.data
+            ?.message ||
             error.message ||
             "Unable to create lead"
         );
+
       } else {
         setError(
           "Unable to create lead"
@@ -253,13 +364,34 @@ export default function LeadForm({
   };
 
 
+  if (loadingData) {
+    return (
+      <div className="empty-state">
+        Loading Lead form...
+      </div>
+    );
+  }
+
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      className="form-grid"
+      onSubmit={handleSubmit}
+    >
 
-      <h2>Add Lead</h2>
+      <div className="form-group form-group-full">
+
+        <h2 className="card-title">
+          Add Lead
+        </h2>
+
+      </div>
 
 
-      <div>
+      {/* LEAD TITLE */}
+
+      <div className="form-group form-group-full">
+
         <label>
           Lead Title
         </label>
@@ -272,12 +404,17 @@ export default function LeadForm({
               event.target.value
             )
           }
+          placeholder="Example: Website Redesign"
           required
         />
+
       </div>
 
 
-      <div>
+      {/* COMPANY */}
+
+      <div className="form-group">
+
         <label>
           Company
         </label>
@@ -290,9 +427,11 @@ export default function LeadForm({
             )
           }
         >
+
           <option value="">
             Select Company
           </option>
+
 
           {companies.map(
             (company) => (
@@ -304,11 +443,16 @@ export default function LeadForm({
               </option>
             )
           )}
+
         </select>
+
       </div>
 
 
-      <div>
+      {/* CONTACT */}
+
+      <div className="form-group">
+
         <label>
           Contact
         </label>
@@ -322,9 +466,13 @@ export default function LeadForm({
           }
           disabled={!companyId}
         >
+
           <option value="">
-            Select Contact
+            {companyId
+              ? "Select Contact"
+              : "Select Company First"}
           </option>
+
 
           {filteredContacts.map(
             (contact) => (
@@ -339,11 +487,16 @@ export default function LeadForm({
               </option>
             )
           )}
+
         </select>
+
       </div>
 
 
-      <div>
+      {/* DESCRIPTION */}
+
+      <div className="form-group form-group-full">
+
         <label>
           Description
         </label>
@@ -355,13 +508,18 @@ export default function LeadForm({
               event.target.value
             )
           }
+          placeholder="Describe the customer requirement..."
         />
+
       </div>
 
 
-      <div>
+      {/* SOURCE */}
+
+      <div className="form-group">
+
         <label>
-          Source
+          Lead Source
         </label>
 
         <input
@@ -374,10 +532,14 @@ export default function LeadForm({
           }
           placeholder="Website, Referral, Phone..."
         />
+
       </div>
 
 
-      <div>
+      {/* BUDGET */}
+
+      <div className="form-group">
+
         <label>
           Estimated Budget
         </label>
@@ -392,11 +554,16 @@ export default function LeadForm({
               event.target.value
             )
           }
+          placeholder="25000"
         />
+
       </div>
 
 
-      <div>
+      {/* CLOSE DATE */}
+
+      <div className="form-group">
+
         <label>
           Expected Close Date
         </label>
@@ -410,12 +577,16 @@ export default function LeadForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      {/* SALES REP */}
+
+      <div className="form-group">
+
         <label>
-          Assign Sales Representative
+          Sales Representative
         </label>
 
         <select
@@ -428,9 +599,11 @@ export default function LeadForm({
             )
           }
         >
+
           <option value="">
             Not Assigned
           </option>
+
 
           {salesRepresentatives.map(
             (rep) => (
@@ -443,23 +616,63 @@ export default function LeadForm({
               </option>
             )
           )}
+
         </select>
+
       </div>
 
 
+      {/* DEFAULT TEMPERATURE */}
+
+      <div className="form-group form-group-full">
+
+        <label>
+          Lead Temperature
+        </label>
+
+        <div>
+          <span className="badge badge-primary">
+            Cold
+          </span>
+        </div>
+
+        <small
+          style={{
+            color:
+              "var(--text-muted)",
+          }}
+        >
+          New leads start as Cold.
+          Hot status will be applied
+          after the required approvals.
+        </small>
+
+      </div>
+
+
+      {/* ERROR */}
+
       {error && (
-        <p>{error}</p>
+        <p className="error-message form-group-full">
+          {error}
+        </p>
       )}
 
 
-      <button
-        type="submit"
-        disabled={loading}
-      >
-        {loading
-          ? "Creating..."
-          : "Create Lead"}
-      </button>
+      {/* BUTTON */}
+
+      <div className="button-row form-group-full">
+
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Creating..."
+            : "Create Lead"}
+        </button>
+
+      </div>
 
     </form>
   );

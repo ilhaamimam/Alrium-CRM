@@ -18,23 +18,37 @@ import type {
   Company,
 } from "../companies/company.types";
 
+
 interface Props {
   onCreated: () => void;
 }
 
+
 export default function ContactForm({
   onCreated,
 }: Props) {
-  const [companies, setCompanies] =
+  const [
+    companies,
+    setCompanies,
+  ] =
     useState<Company[]>([]);
 
-  const [companyId, setCompanyId] =
+  const [
+    companyId,
+    setCompanyId,
+  ] =
     useState("");
 
-  const [firstName, setFirstName] =
+  const [
+    firstName,
+    setFirstName,
+  ] =
     useState("");
 
-  const [lastName, setLastName] =
+  const [
+    lastName,
+    setLastName,
+  ] =
     useState("");
 
   const [email, setEmail] =
@@ -43,7 +57,10 @@ export default function ContactForm({
   const [phone, setPhone] =
     useState("");
 
-  const [jobTitle, setJobTitle] =
+  const [
+    jobTitle,
+    setJobTitle,
+  ] =
     useState("");
 
   const [notes, setNotes] =
@@ -55,6 +72,7 @@ export default function ContactForm({
   const [error, setError] =
     useState("");
 
+
   useEffect(() => {
     const loadCompanies =
       async () => {
@@ -65,12 +83,7 @@ export default function ContactForm({
           setCompanies(data);
         } catch (error) {
           console.error(
-            "LOAD COMPANIES ERROR:",
             error
-          );
-
-          setError(
-            "Unable to load companies"
           );
         }
       };
@@ -78,16 +91,16 @@ export default function ContactForm({
     loadCompanies();
   }, []);
 
+
   const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
+    event:
+      FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     setError("");
 
-    /*
-     * Frontend validation.
-     */
+
     if (!firstName.trim()) {
       setError(
         "First name is required"
@@ -96,10 +109,12 @@ export default function ContactForm({
       return;
     }
 
+
     setLoading(true);
 
+
     try {
-      const requestData = {
+      await createContact({
         companyId:
           companyId || null,
 
@@ -120,20 +135,9 @@ export default function ContactForm({
 
         notes:
           notes.trim(),
-      };
+      });
 
-      console.log(
-        "CONTACT FORM DATA:",
-        requestData
-      );
 
-      await createContact(
-        requestData
-      );
-
-      /*
-       * Clear fields after success.
-       */
       setCompanyId("");
       setFirstName("");
       setLastName("");
@@ -142,9 +146,7 @@ export default function ContactForm({
       setJobTitle("");
       setNotes("");
 
-      /*
-       * Reload contacts in ContactPage.
-       */
+
       onCreated();
 
     } catch (error) {
@@ -153,12 +155,12 @@ export default function ContactForm({
         error
       );
 
+
       if (
         axios.isAxiosError(error)
       ) {
         setError(
           error.response?.data?.message ||
-            error.message ||
             "Unable to create contact"
         );
       } else {
@@ -172,13 +174,24 @@ export default function ContactForm({
     }
   };
 
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      className="form-grid"
+      onSubmit={handleSubmit}
+    >
 
-      <h2>Add Contact</h2>
+      <div className="form-group form-group-full">
+
+        <h2 className="card-title">
+          Add Contact
+        </h2>
+
+      </div>
 
 
-      <div>
+      <div className="form-group form-group-full">
+
         <label>
           Company
         </label>
@@ -206,16 +219,17 @@ export default function ContactForm({
             )
           )}
         </select>
+
       </div>
 
 
-      <div>
+      <div className="form-group">
+
         <label>
           First Name
         </label>
 
         <input
-          type="text"
           value={firstName}
           onChange={(event) =>
             setFirstName(
@@ -224,16 +238,17 @@ export default function ContactForm({
           }
           required
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group">
+
         <label>
           Last Name
         </label>
 
         <input
-          type="text"
           value={lastName}
           onChange={(event) =>
             setLastName(
@@ -241,10 +256,12 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group">
+
         <label>
           Email
         </label>
@@ -258,16 +275,17 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group">
+
         <label>
           Phone
         </label>
 
         <input
-          type="text"
           value={phone}
           onChange={(event) =>
             setPhone(
@@ -275,16 +293,17 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group form-group-full">
+
         <label>
           Job Title
         </label>
 
         <input
-          type="text"
           value={jobTitle}
           onChange={(event) =>
             setJobTitle(
@@ -292,10 +311,12 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group form-group-full">
+
         <label>
           Notes
         </label>
@@ -308,22 +329,29 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
       {error && (
-        <p>{error}</p>
+        <p className="error-message form-group-full">
+          {error}
+        </p>
       )}
 
 
-      <button
-        type="submit"
-        disabled={loading}
-      >
-        {loading
-          ? "Creating..."
-          : "Create Contact"}
-      </button>
+      <div className="button-row form-group-full">
+
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Creating..."
+            : "Create Contact"}
+        </button>
+
+      </div>
 
     </form>
   );

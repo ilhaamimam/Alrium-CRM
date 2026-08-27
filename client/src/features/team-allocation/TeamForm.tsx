@@ -19,13 +19,8 @@ interface Props {
 export default function TeamForm({
   onCreated,
 }: Props) {
-
-  const [
-    name,
-    setName,
-  ] =
+  const [name, setName] =
     useState("");
-
 
   const [
     description,
@@ -33,118 +28,98 @@ export default function TeamForm({
   ] =
     useState("");
 
-
-  const [
-    loading,
-    setLoading,
-  ] =
+  const [loading, setLoading] =
     useState(false);
 
-
-  const [
-    error,
-    setError,
-  ] =
+  const [error, setError] =
     useState("");
 
 
-  const handleSubmit =
-    async (
-      event:
-        FormEvent<HTMLFormElement>
-    ) => {
+  const handleSubmit = async (
+    event:
+      FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
 
-      event.preventDefault();
-
-      setError("");
+    setError("");
 
 
-      if (!name.trim()) {
+    if (!name.trim()) {
+      setError(
+        "Team name is required"
+      );
 
+      return;
+    }
+
+
+    setLoading(true);
+
+
+    try {
+      await createTeam({
+        name:
+          name.trim(),
+
+        description:
+          description.trim(),
+      });
+
+
+      setName("");
+      setDescription("");
+
+
+      onCreated();
+
+    } catch (error) {
+      console.error(
+        "CREATE TEAM ERROR:",
+        error
+      );
+
+
+      if (
+        axios.isAxiosError(error)
+      ) {
         setError(
-          "Team name is required"
-        );
-
-        return;
-      }
-
-
-      setLoading(true);
-
-
-      try {
-
-        await createTeam({
-          name:
-            name.trim(),
-
-          description:
-            description.trim(),
-        });
-
-
-        setName("");
-
-        setDescription("");
-
-
-        onCreated();
-
-      } catch (error) {
-
-        console.error(
-          "CREATE TEAM ERROR:",
-          error
-        );
-
-
-        if (
-          axios.isAxiosError(
-            error
-          )
-        ) {
-
-          setError(
-            error.response
-              ?.data
-              ?.message ||
-              "Unable to create team"
-          );
-
-        } else {
-
-          setError(
+          error.response?.data?.message ||
             "Unable to create team"
-          );
-        }
-
-      } finally {
-
-        setLoading(false);
-
+        );
+      } else {
+        setError(
+          "Unable to create team"
+        );
       }
-    };
+
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   return (
     <form
-      onSubmit={
-        handleSubmit
-      }
+      className="form-grid"
+      onSubmit={handleSubmit}
     >
 
-      <h2>
-        Create Team
-      </h2>
+      <div className="form-group form-group-full">
+
+        <h2 className="card-title">
+          Create Team
+        </h2>
+
+      </div>
 
 
-      <div>
+      <div className="form-group form-group-full">
+
         <label>
           Team Name
         </label>
 
         <input
-          type="text"
           value={name}
           onChange={(event) =>
             setName(
@@ -153,44 +128,47 @@ export default function TeamForm({
           }
           required
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group form-group-full">
+
         <label>
           Description
         </label>
 
         <textarea
-          value={
-            description
-          }
+          value={description}
           onChange={(event) =>
             setDescription(
               event.target.value
             )
           }
         />
+
       </div>
 
 
       {error && (
-        <p>
+        <p className="error-message form-group-full">
           {error}
         </p>
       )}
 
 
-      <button
-        type="submit"
-        disabled={
-          loading
-        }
-      >
-        {loading
-          ? "Creating..."
-          : "Create Team"}
-      </button>
+      <div className="button-row form-group-full">
+
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Creating..."
+            : "Create Team"}
+        </button>
+
+      </div>
 
     </form>
   );

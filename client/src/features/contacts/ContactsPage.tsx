@@ -8,55 +8,64 @@ import {
   fetchContacts,
 } from "./contact.api";
 
-import ContactForm from "./ContactForm";
+import ContactForm
+  from "./ContactForm";
 
-import ContactTable from "./ContactTable";
+import ContactTable
+  from "./ContactTable";
 
 import type {
   Contact,
 } from "./contact.types";
 
+import "./contacts.css";
+
 
 export default function ContactPage() {
-  const [contacts, setContacts] =
+  const [
+    contacts,
+    setContacts,
+  ] =
     useState<Contact[]>([]);
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState("");
 
 
   const loadContacts =
-    useCallback(async () => {
-      try {
-        setError("");
+    useCallback(
+      async () => {
+        try {
+          setError("");
 
-        const data =
-          await fetchContacts();
+          const data =
+            await fetchContacts();
 
-        console.log(
-          "Contacts from API:",
-          data
-        );
+          setContacts(data);
+        } catch (error) {
+          console.error(
+            "LOAD CONTACTS ERROR:",
+            error
+          );
 
-        setContacts(data);
-
-      } catch (error) {
-        console.error(
-          "Load contacts error:",
-          error
-        );
-
-        setError(
-          "Unable to load contacts"
-        );
-
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+          setError(
+            "Unable to load contacts"
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
 
   useEffect(() => {
@@ -66,29 +75,69 @@ export default function ContactPage() {
 
   if (loading) {
     return (
-      <p>Loading contacts...</p>
+      <div className="page-shell">
+
+        <div className="empty-state">
+          Loading contacts...
+        </div>
+
+      </div>
     );
   }
 
 
   return (
-    <div>
-      <h1>Contacts</h1>
+    <div className="page-shell">
+
+      <div className="page-header">
+
+        <h1 className="page-title">
+          Contacts
+        </h1>
+
+        <p className="page-subtitle">
+          Manage customer contacts
+          connected to companies.
+        </p>
+
+      </div>
 
 
       {error && (
-        <p>{error}</p>
+        <p className="error-message">
+          {error}
+        </p>
       )}
 
 
-      <ContactForm
-        onCreated={loadContacts}
-      />
+      <div className="contacts-layout">
+
+        <div className="card">
+
+          <ContactForm
+            onCreated={
+              loadContacts
+            }
+          />
+
+        </div>
 
 
-      <ContactTable
-        contacts={contacts}
-      />
+        <div className="card">
+
+          <h2 className="card-title">
+            Contact Directory
+          </h2>
+
+          <ContactTable
+            contacts={
+              contacts
+            }
+          />
+
+        </div>
+
+      </div>
 
     </div>
   );

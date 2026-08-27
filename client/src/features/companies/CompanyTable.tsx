@@ -15,77 +15,103 @@ interface Props {
 export default function CompanyTable({
   companies,
 }: Props) {
-  if (companies.length === 0) {
+  if (
+    companies.length === 0
+  ) {
     return (
-      <p>No companies found.</p>
+      <div className="empty-state">
+        No companies found.
+      </div>
     );
   }
 
 
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
+    <div className="table-wrap">
 
-          <th>Industry</th>
+      <table>
 
-          <th>Website</th>
+        <thead>
+          <tr>
+            <th>Name</th>
 
-          <th>Phone</th>
+            <th>Industry</th>
 
-          <th>Actions</th>
-        </tr>
-      </thead>
+            <th>Website</th>
+
+            <th>Phone</th>
+
+            <th>Actions</th>
+          </tr>
+        </thead>
 
 
-      <tbody>
-        {companies.map(
-          (company) => (
-            <tr key={company.id}>
+        <tbody>
 
-              <td>
-                {company.name}
-              </td>
+          {companies.map(
+            (company) => (
+              <tr key={company.id}>
 
-              <td>
-                {company.industry ||
-                  "-"}
-              </td>
-
-              <td>
-                {company.website ? (
-                    <a
-                    href={company.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    >
-                    {company.website}
-                    </a>
-                ) : (
-                    "-"
-                )}
+                <td>
+                  <Link
+                    className="company-name-link"
+                    to={
+                      `/companies/${company.id}`
+                    }
+                  >
+                    {company.name}
+                  </Link>
                 </td>
 
-              <td>
-                {company.phone ||
-                  "-"}
-              </td>
 
-              <td>
-            <Link
-                to={
-                `/companies/${company.id}`
-                }
-            >
-                {company.name}
-            </Link>
-            </td>
+                <td>
+                  {company.industry ||
+                    "-"}
+                </td>
 
-            </tr>
-          )
-        )}
-      </tbody>
-    </table>
+
+                <td>
+                  {company.website ? (
+                    <a
+                      href={
+                        company.website
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Visit
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+
+
+                <td>
+                  {company.phone ||
+                    "-"}
+                </td>
+
+
+                <td>
+                  <Link
+                    className="btn btn-secondary"
+                    to={
+                      `/companies/${company.id}`
+                    }
+                  >
+                    View
+                  </Link>
+                </td>
+
+              </tr>
+            )
+          )}
+
+        </tbody>
+
+      </table>
+
+    </div>
   );
 }

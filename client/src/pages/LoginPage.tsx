@@ -2,7 +2,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-
+import "./LoginPage.css";
 import {
   useNavigate,
 } from "react-router-dom";
@@ -63,14 +63,25 @@ export default function LoginPage() {
 
 
   return (
-    <div>
-      <h1>Altrium CRM</h1>
+  <div className="login-page">
 
-      <h2>Login</h2>
+    <div className="login-card">
 
-      <form onSubmit={handleSubmit}>
+      <div className="login-brand">
+        <h1>Altrium CRM</h1>
 
-        <div>
+        <p>
+          Sign in to continue
+        </p>
+      </div>
+
+
+      <form
+        className="login-form"
+        onSubmit={handleSubmit}
+      >
+
+        <div className="form-group">
           <label>Email</label>
 
           <input
@@ -86,7 +97,7 @@ export default function LoginPage() {
         </div>
 
 
-        <div>
+        <div className="form-group">
           <label>Password</label>
 
           <input
@@ -103,11 +114,14 @@ export default function LoginPage() {
 
 
         {error && (
-          <p>{error}</p>
+          <p className="error-message">
+            {error}
+          </p>
         )}
 
 
         <button
+          className="login-button"
           type="submit"
           disabled={loading}
         >
@@ -117,6 +131,9 @@ export default function LoginPage() {
         </button>
 
       </form>
+
     </div>
-  );
+
+  </div>
+);
 }
