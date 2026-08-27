@@ -81,6 +81,31 @@ export default function DashboardPage() {
   Open Approved Lead Board
 </Link>
 
+{profile?.role ===
+  "senior_manager" && (
+  <div>
+
+    <p>
+      <Link
+        to="/lead-board"
+      >
+        Open Approved Lead Board
+      </Link>
+    </p>
+
+
+    <p>
+      <Link
+        to="/team-allocation"
+      >
+        Team Allocation & Management
+      </Link>
+    </p>
+
+  </div>
+)}
+
+
       <button
         onClick={() => signOut()}
       >

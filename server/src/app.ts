@@ -6,6 +6,8 @@ import morgan from "morgan";
 import { env } from "./config/env";
 import contactRoutes from "./routes/contact.routes";
 import profileRoutes from "./routes/profile.routes";
+import teamAllocationRoutes
+  from "./routes/teamAllocation.routes";
 import companyRoutes from "./routes/company.routes";
 import approvedLeadBoardRoutes
   from "./routes/approvedLeadBoard.routes";
@@ -25,6 +27,12 @@ app.use(
   "/api",
   contactRoutes
 );
+
+app.use(
+  "/api",
+  teamAllocationRoutes
+);
+
 
 
 // Security headers
