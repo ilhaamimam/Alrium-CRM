@@ -11,7 +11,11 @@ import CompaniesPage from "./features/companies/CompaniesPage";
 import CompanyDetailsPage from "./features/companies/CompanyDetailsPage";
 import ContactPage from "./features/contacts/ContactsPage";
 import LeadsPage from "./features/leads/LeadsPage";
+import ApprovedLeadBoardPage
+  from "./features/approved-lead-board/ApprovedLeadBoardPage";
 
+import ApprovedLeadBoardDetailsPage
+  from "./features/approved-lead-board/ApprovedLeadBoardDetailsPage";
 import LeadDetailsPage from "./features/leads/LeadDetailsPage";
 import ContactDetailsPage from "./features/contacts/ContactDetailsPage";
 import ProtectedRoute from "./pages/routes/ProtectedRoute";
@@ -35,6 +39,24 @@ function App() {
   }
 />
 
+<Route
+  path="/lead-board"
+  element={
+    <ProtectedRoute>
+      <ApprovedLeadBoardPage />
+    </ProtectedRoute>
+  }
+/>
+
+
+<Route
+  path="/lead-board/:id"
+  element={
+    <ProtectedRoute>
+      <ApprovedLeadBoardDetailsPage />
+    </ProtectedRoute>
+  }
+/>
 
 <Route
   path="/leads/:id"
