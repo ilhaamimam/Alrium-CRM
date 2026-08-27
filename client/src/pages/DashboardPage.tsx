@@ -5,7 +5,9 @@ import {
 
 import { api } from "../api/http";
 import { useAuth } from "../auth/useAuth";
-
+import {
+  Link,
+} from "react-router-dom";
 
 interface Profile {
   id: string;
@@ -75,7 +77,9 @@ export default function DashboardPage() {
           Loading profile...
         </p>
       )}
-
+<Link to="/lead-board">
+  Open Approved Lead Board
+</Link>
 
       <button
         onClick={() => signOut()}

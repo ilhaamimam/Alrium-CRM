@@ -7,6 +7,8 @@ import { env } from "./config/env";
 import contactRoutes from "./routes/contact.routes";
 import profileRoutes from "./routes/profile.routes";
 import companyRoutes from "./routes/company.routes";
+import approvedLeadBoardRoutes
+  from "./routes/approvedLeadBoard.routes";
 import leadRoutes from "./routes/lead.routes";
 const app = express();
 
@@ -32,6 +34,11 @@ app.use(helmet());
 // VERY IMPORTANT:
 // These must come BEFORE your routes.
 app.use(express.json());
+
+app.use(
+  "/api",
+  approvedLeadBoardRoutes
+);
 
 app.use(
   express.urlencoded({
