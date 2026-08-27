@@ -1,4 +1,6 @@
-import { supabaseAdmin } from "../config/supabase";
+import {
+  supabaseAdmin,
+} from "../config/supabase";
 
 export interface CreateContactInput {
   companyId?: string | null;
@@ -34,220 +36,274 @@ export interface UpdateContactInput {
   notes?: string | null;
 }
 
-export const getContacts = async () => {
-  const { data, error } =
-    await supabaseAdmin
-      .from("contacts")
-      .select(`
-        id,
-        company_id,
-        first_name,
-        last_name,
-        email,
-        phone,
-        job_title,
-        notes,
-        archived_at,
-        created_at,
-        updated_at,
-        companies (
-          id,
-          name
+
+const contactSelect = `
+  id,
+  company_id,
+  first_name,
+  last_name,
+  email,
+  phone,
+  job_title,
+  notes,
+  archived_at,
+  created_at,
+  updated_at,
+
+  companies (
+    id,
+    name
+  )
+`;
+
+
+/*
+ * GET all active contacts.
+ */
+export const getContacts =
+  async () => {
+    const {
+      data,
+      error,
+    } =
+      await supabaseAdmin
+        .from("contacts")
+        .select(contactSelect)
+        .is(
+          "archived_at",
+          null
         )
-      `)
-      .is("archived_at", null)
-      .order("created_at", {
-        ascending: false,
-      });
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        );
 
-  if (error) {
-    console.error(
-      "GET CONTACTS ERROR:",
-      error
-    );
+    if (error) {
+      console.error(
+        "GET CONTACTS DATABASE ERROR:",
+        error
+      );
 
-    throw new Error(
-      `Unable to load contacts: ${error.message}`
-    );
-  }
+      throw new Error(
+        `Unable to load contacts: ${error.message}`
+      );
+    }
 
-  return data;
-};
+    return data;
+  };
 
-export const getContactById = async (
-  contactId: string
-) => {
-  const { data, error } =
-    await supabaseAdmin
-      .from("contacts")
-      .select(`
-        id,
-        company_id,
-        first_name,
-        last_name,
-        email,
-        phone,
-        job_title,
-        notes,
-        archived_at,
-        created_at,
-        updated_at,
-        companies (
-          id,
-          name
+
+/*
+ * GET one contact.
+ */
+export const getContactById =
+  async (
+    contactId: string
+  ) => {
+    const {
+      data,
+      error,
+    } =
+      await supabaseAdmin
+        .from("contacts")
+        .select(contactSelect)
+        .eq(
+          "id",
+          contactId
         )
-      `)
-      .eq("id", contactId)
-      .single();
+        .single();
 
-  if (error) {
-    console.error(
-      "GET CONTACT ERROR:",
-      error
+    if (error) {
+      console.error(
+        "GET CONTACT DATABASE ERROR:",
+        error
+      );
+
+      throw new Error(
+        `Unable to load contact: ${error.message}`
+      );
+    }
+
+    return data;
+  };
+
+
+/*
+ * CREATE contact.
+ */
+export const createContact =
+  async (
+    input: CreateContactInput
+  ) => {
+    console.log(
+      "CONTACT SERVICE INPUT:",
+      input
     );
 
-    throw new Error(
-      `Unable to load contact: ${error.message}`
-    );
-  }
+    const {
+      data,
+      error,
+    } =
+      await supabaseAdmin
+        .from("contacts")
+        .insert({
+          company_id:
+            input.companyId ||
+            null,
 
-  return data;
-};
+          first_name:
+            input.firstName,
 
-export const createContact = async (
-  input: CreateContactInput
-) => {
-  const { data, error } =
-    await supabaseAdmin
-      .from("contacts")
-      .insert({
-        company_id:
-          input.companyId || null,
+          last_name:
+            input.lastName ||
+            null,
 
-        first_name:
-          input.firstName,
+          email:
+            input.email ||
+            null,
 
-        last_name:
-          input.lastName || null,
+          phone:
+            input.phone ||
+            null,
 
-        email:
-          input.email || null,
+          job_title:
+            input.jobTitle ||
+            null,
 
-        phone:
-          input.phone || null,
+          notes:
+            input.notes ||
+            null,
 
-        job_title:
-          input.jobTitle || null,
+          created_by:
+            input.createdBy,
+        })
+        .select(
+          contactSelect
+        )
+        .single();
 
-        notes:
-          input.notes || null,
+    if (error) {
+      console.error(
+        "CREATE CONTACT DATABASE ERROR:",
+        error
+      );
 
-        created_by:
-          input.createdBy,
-      })
-      .select(`
-        id,
-        company_id,
-        first_name,
-        last_name,
-        email,
-        phone,
-        job_title,
-        notes,
-        archived_at,
-        created_at,
-        updated_at
-      `)
-      .single();
+      throw new Error(
+        `Unable to create contact: ${error.message}`
+      );
+    }
 
-  if (error) {
-    console.error(
-      "CREATE CONTACT ERROR:",
-      error
-    );
-
-    throw new Error(
-      `Unable to create contact: ${error.message}`
-    );
-  }
-
-  return data;
-};
-
-export const updateContact = async (
-  contactId: string,
-  input: UpdateContactInput
-) => {
-  const updates: Record<
-    string,
-    unknown
-  > = {};
-
-  if (
-    input.companyId !== undefined
-  ) {
-    updates.company_id =
-      input.companyId;
-  }
-
-  if (
-    input.firstName !== undefined
-  ) {
-    updates.first_name =
-      input.firstName;
-  }
-
-  if (
-    input.lastName !== undefined
-  ) {
-    updates.last_name =
-      input.lastName;
-  }
-
-  if (
-    input.email !== undefined
-  ) {
-    updates.email =
-      input.email;
-  }
-
-  if (
-    input.phone !== undefined
-  ) {
-    updates.phone =
-      input.phone;
-  }
-
-  if (
-    input.jobTitle !== undefined
-  ) {
-    updates.job_title =
-      input.jobTitle;
-  }
-
-  if (
-    input.notes !== undefined
-  ) {
-    updates.notes =
-      input.notes;
-  }
+    return data;
+  };
 
 
-  const { data, error } =
-    await supabaseAdmin
-      .from("contacts")
-      .update(updates)
-      .eq("id", contactId)
-      .select()
-      .single();
+/*
+ * UPDATE contact.
+ */
+export const updateContact =
+  async (
+    contactId: string,
+    input: UpdateContactInput
+  ) => {
+    const updates: Record<
+      string,
+      unknown
+    > = {};
 
 
-  if (error) {
-    throw new Error(
-      `Unable to update contact: ${error.message}`
-    );
-  }
+    if (
+      input.companyId !==
+      undefined
+    ) {
+      updates.company_id =
+        input.companyId;
+    }
 
 
-  return data;
-};
+    if (
+      input.firstName !==
+      undefined
+    ) {
+      updates.first_name =
+        input.firstName;
+    }
+
+
+    if (
+      input.lastName !==
+      undefined
+    ) {
+      updates.last_name =
+        input.lastName;
+    }
+
+
+    if (
+      input.email !==
+      undefined
+    ) {
+      updates.email =
+        input.email;
+    }
+
+
+    if (
+      input.phone !==
+      undefined
+    ) {
+      updates.phone =
+        input.phone;
+    }
+
+
+    if (
+      input.jobTitle !==
+      undefined
+    ) {
+      updates.job_title =
+        input.jobTitle;
+    }
+
+
+    if (
+      input.notes !==
+      undefined
+    ) {
+      updates.notes =
+        input.notes;
+    }
+
+
+    const {
+      data,
+      error,
+    } =
+      await supabaseAdmin
+        .from("contacts")
+        .update(updates)
+        .eq(
+          "id",
+          contactId
+        )
+        .select(
+          contactSelect
+        )
+        .single();
+
+
+    if (error) {
+      console.error(
+        "UPDATE CONTACT DATABASE ERROR:",
+        error
+      );
+
+      throw new Error(
+        `Unable to update contact: ${error.message}`
+      );
+    }
+
+
+    return data;
+  };

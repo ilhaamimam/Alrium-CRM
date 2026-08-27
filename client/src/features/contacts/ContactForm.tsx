@@ -18,11 +18,9 @@ import type {
   Company,
 } from "../companies/company.types";
 
-
 interface Props {
   onCreated: () => void;
 }
-
 
 export default function ContactForm({
   onCreated,
@@ -54,37 +52,31 @@ export default function ContactForm({
   const [loading, setLoading] =
     useState(false);
 
-  const [companiesLoading, setCompaniesLoading] =
-    useState(true);
-
   const [error, setError] =
     useState("");
 
-
   useEffect(() => {
-    const loadCompanies = async () => {
-      try {
-        const data =
-          await fetchCompanies();
+    const loadCompanies =
+      async () => {
+        try {
+          const data =
+            await fetchCompanies();
 
-        setCompanies(data);
-      } catch (error) {
-        console.error(
-          "Unable to load companies:",
-          error
-        );
+          setCompanies(data);
+        } catch (error) {
+          console.error(
+            "LOAD COMPANIES ERROR:",
+            error
+          );
 
-        setError(
-          "Unable to load companies"
-        );
-      } finally {
-        setCompaniesLoading(false);
-      }
-    };
+          setError(
+            "Unable to load companies"
+          );
+        }
+      };
 
     loadCompanies();
   }, []);
-
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
@@ -92,28 +84,56 @@ export default function ContactForm({
     event.preventDefault();
 
     setError("");
+
+    /*
+     * Frontend validation.
+     */
+    if (!firstName.trim()) {
+      setError(
+        "First name is required"
+      );
+
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await createContact({
+      const requestData = {
         companyId:
-          companyId || undefined,
+          companyId || null,
 
-        firstName,
+        firstName:
+          firstName.trim(),
 
-        lastName,
+        lastName:
+          lastName.trim(),
 
-        email,
+        email:
+          email.trim(),
 
-        phone,
+        phone:
+          phone.trim(),
 
-        jobTitle,
+        jobTitle:
+          jobTitle.trim(),
 
-        notes,
-      });
+        notes:
+          notes.trim(),
+      };
 
+      console.log(
+        "CONTACT FORM DATA:",
+        requestData
+      );
 
-      // Clear form
+      await createContact(
+        requestData
+      );
+
+      /*
+       * Clear fields after success.
+       */
       setCompanyId("");
       setFirstName("");
       setLastName("");
@@ -122,17 +142,20 @@ export default function ContactForm({
       setJobTitle("");
       setNotes("");
 
-
-      // Reload ContactPage list
+      /*
+       * Reload contacts in ContactPage.
+       */
       onCreated();
 
     } catch (error) {
       console.error(
-        "Create contact error:",
+        "CREATE CONTACT ERROR:",
         error
       );
 
-      if (axios.isAxiosError(error)) {
+      if (
+        axios.isAxiosError(error)
+      ) {
         setError(
           error.response?.data?.message ||
             error.message ||
@@ -143,19 +166,22 @@ export default function ContactForm({
           "Unable to create contact"
         );
       }
+
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
     <form onSubmit={handleSubmit}>
+
       <h2>Add Contact</h2>
 
 
       <div>
-        <label>Company</label>
+        <label>
+          Company
+        </label>
 
         <select
           value={companyId}
@@ -164,7 +190,6 @@ export default function ContactForm({
               event.target.value
             )
           }
-          disabled={companiesLoading}
         >
           <option value="">
             No Company
@@ -185,7 +210,9 @@ export default function ContactForm({
 
 
       <div>
-        <label>First Name</label>
+        <label>
+          First Name
+        </label>
 
         <input
           type="text"
@@ -201,7 +228,9 @@ export default function ContactForm({
 
 
       <div>
-        <label>Last Name</label>
+        <label>
+          Last Name
+        </label>
 
         <input
           type="text"
@@ -216,7 +245,9 @@ export default function ContactForm({
 
 
       <div>
-        <label>Email</label>
+        <label>
+          Email
+        </label>
 
         <input
           type="email"
@@ -231,7 +262,9 @@ export default function ContactForm({
 
 
       <div>
-        <label>Phone</label>
+        <label>
+          Phone
+        </label>
 
         <input
           type="text"
@@ -246,7 +279,9 @@ export default function ContactForm({
 
 
       <div>
-        <label>Job Title</label>
+        <label>
+          Job Title
+        </label>
 
         <input
           type="text"
@@ -261,7 +296,9 @@ export default function ContactForm({
 
 
       <div>
-        <label>Notes</label>
+        <label>
+          Notes
+        </label>
 
         <textarea
           value={notes}
@@ -284,7 +321,7 @@ export default function ContactForm({
         disabled={loading}
       >
         {loading
-          ? "Saving..."
+          ? "Creating..."
           : "Create Contact"}
       </button>
 

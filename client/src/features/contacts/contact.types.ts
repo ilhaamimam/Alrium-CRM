@@ -3,7 +3,6 @@ export interface ContactCompany {
   name: string;
 }
 
-
 export interface Contact {
   id: string;
 
@@ -30,9 +29,8 @@ export interface Contact {
   companies?: ContactCompany | null;
 }
 
-
 export interface CreateContactInput {
-  companyId?: string;
+  companyId?: string | null;
 
   firstName: string;
 
@@ -47,19 +45,18 @@ export interface CreateContactInput {
   notes?: string;
 }
 
-
 export interface UpdateContactInput {
-  companyId?: string;
+  companyId?: string | null;
 
   firstName?: string;
 
-  lastName?: string;
+  lastName?: string | null;
 
-  email?: string;
+  email?: string | null;
 
-  phone?: string;
+  phone?: string | null;
 
-  jobTitle?: string;
+  jobTitle?: string | null;
 
-  notes?: string;
+  notes?: string | null;
 }
