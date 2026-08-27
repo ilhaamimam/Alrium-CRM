@@ -20,9 +20,10 @@ import type {
   ApprovedLeadBoardItem,
 } from "./approvedLeadBoard.types";
 
+import "./approvedLeadBoard.css";
+
 
 export default function ApprovedLeadBoardPage() {
-
   const [
     boardItems,
     setBoardItems,
@@ -30,7 +31,6 @@ export default function ApprovedLeadBoardPage() {
     useState<
       ApprovedLeadBoardItem[]
     >([]);
-
 
   const [
     availableLeads,
@@ -40,13 +40,11 @@ export default function ApprovedLeadBoardPage() {
       ApprovedLead[]
     >([]);
 
-
   const [
     loading,
     setLoading,
   ] =
     useState(true);
-
 
   const [
     error,
@@ -58,10 +56,8 @@ export default function ApprovedLeadBoardPage() {
   const loadBoard =
     useCallback(
       async () => {
-
         try {
           setError("");
-
 
           const [
             board,
@@ -69,36 +65,28 @@ export default function ApprovedLeadBoardPage() {
           ] =
             await Promise.all([
               fetchApprovedLeadBoard(),
-
               fetchAvailableApprovedLeads(),
             ]);
 
 
-          setBoardItems(
-            board
-          );
-
+          setBoardItems(board);
 
           setAvailableLeads(
             available
           );
 
         } catch (error) {
-
           console.error(
             "LOAD LEAD BOARD ERROR:",
             error
           );
 
-
           setError(
-            "Unable to load approved Lead Board"
+            "Unable to load Approved Lead Board"
           );
 
         } finally {
-
           setLoading(false);
-
         }
       },
       []
@@ -106,65 +94,79 @@ export default function ApprovedLeadBoardPage() {
 
 
   useEffect(() => {
-
     loadBoard();
-
-  }, [
-    loadBoard,
-  ]);
+  }, [loadBoard]);
 
 
   if (loading) {
     return (
-      <p>
-        Loading approved Lead Board...
-      </p>
+      <div className="page-shell">
+
+        <div className="empty-state">
+          Loading Approved Lead Board...
+        </div>
+
+      </div>
     );
   }
 
 
   return (
-    <div>
+    <div className="page-shell">
 
-      <h1>
-        Approved Lead Board
-      </h1>
+      <div className="page-header">
 
+        <h1 className="page-title">
+          Approved Lead Board
+        </h1>
 
-      <p>
-        Senior Manager Management
-      </p>
+        <p className="page-subtitle">
+          Manage approved Hot leads from
+          planning through completion.
+        </p>
+
+      </div>
 
 
       {error && (
-        <p>{error}</p>
+        <p className="error-message">
+          {error}
+        </p>
       )}
 
 
-      <ApprovedLeadBoardAddForm
-        availableLeads={
-          availableLeads
-        }
+      <div className="lead-board-grid">
 
-        onAdded={
-          loadBoard
-        }
-      />
+        <div className="card">
 
+          <ApprovedLeadBoardAddForm
+            availableLeads={
+              availableLeads
+            }
 
-      <hr />
+            onAdded={
+              loadBoard
+            }
+          />
 
-
-      <h2>
-        Board
-      </h2>
+        </div>
 
 
-      <ApprovedLeadBoardTable
-        items={
-          boardItems
-        }
-      />
+        <div className="card">
+
+          <h2 className="card-title">
+            Lead Board
+          </h2>
+
+          <ApprovedLeadBoardTable
+            items={
+              boardItems
+            }
+          />
+
+        </div>
+
+      </div>
 
     </div>
   );

@@ -6,7 +6,12 @@ import {
   Navigate,
 } from "react-router-dom";
 
-import { useAuth } from "../../auth/useAuth";
+import {
+  useAuth,
+} from "../../auth/useAuth";
+
+import AppHeader
+  from "../../components/AppHeader";
 
 
 interface Props {
@@ -20,11 +25,20 @@ export default function ProtectedRoute({
   const {
     user,
     loading,
-  } = useAuth();
+  } =
+    useAuth();
 
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="page-shell">
+
+        <div className="empty-state">
+          Loading...
+        </div>
+
+      </div>
+    );
   }
 
 
@@ -38,5 +52,11 @@ export default function ProtectedRoute({
   }
 
 
-  return children;
+  return (
+    <>
+      <AppHeader />
+
+      {children}
+    </>
+  );
 }

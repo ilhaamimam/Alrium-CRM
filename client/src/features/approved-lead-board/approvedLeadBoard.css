@@ -1,0 +1,86 @@
+.lead-board-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(300px, 380px)
+    minmax(0, 1fr);
+
+  gap: 24px;
+
+  align-items: start;
+}
+
+.board-status {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  font-size: 0.76rem;
+  font-weight: 700;
+
+  text-transform: capitalize;
+}
+
+.status-pending {
+  color: var(--warning);
+
+  background:
+    rgba(232, 180, 92, 0.08);
+
+  border:
+    1px solid
+    rgba(232, 180, 92, 0.25);
+}
+
+.status-planned {
+  color: var(--primary);
+
+  background:
+    rgba(110, 168, 254, 0.08);
+
+  border:
+    1px solid
+    rgba(110, 168, 254, 0.25);
+}
+
+.status-assigned {
+  color: #b99aff;
+
+  background:
+    rgba(185, 154, 255, 0.08);
+
+  border:
+    1px solid
+    rgba(185, 154, 255, 0.25);
+}
+
+.status-ongoing {
+  color: #65d7db;
+
+  background:
+    rgba(101, 215, 219, 0.08);
+
+  border:
+    1px solid
+    rgba(101, 215, 219, 0.25);
+}
+
+.status-done {
+  color: var(--success);
+
+  background:
+    rgba(73, 199, 142, 0.08);
+
+  border:
+    1px solid
+    rgba(73, 199, 142, 0.25);
+}
+
+@media (max-width: 900px) {
+  .lead-board-grid {
+    grid-template-columns: 1fr;
+  }
+}

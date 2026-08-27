@@ -15,86 +15,104 @@ interface Props {
 export default function ContactTable({
   contacts,
 }: Props) {
-  if (contacts.length === 0) {
+  if (
+    contacts.length === 0
+  ) {
     return (
-      <p>No contacts found.</p>
+      <div className="empty-state">
+        No contacts found.
+      </div>
     );
   }
 
 
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
+    <div className="table-wrap">
 
-          <th>Company</th>
+      <table>
 
-          <th>Email</th>
+        <thead>
+          <tr>
+            <th>Name</th>
 
-          <th>Phone</th>
+            <th>Company</th>
 
-          <th>Job Title</th>
+            <th>Email</th>
 
-          <th>Actions</th>
-        </tr>
-      </thead>
+            <th>Phone</th>
 
+            <th>Job Title</th>
 
-      <tbody>
-        {contacts.map(
-          (contact) => (
-            <tr key={contact.id}>
-
-              <td>
-                <Link
-                  to={
-                    `/contacts/${contact.id}`
-                  }
-                >
-                  {contact.first_name}
-                  {" "}
-                  {contact.last_name || ""}
-                </Link>
-              </td>
+            <th>Actions</th>
+          </tr>
+        </thead>
 
 
-              <td>
-                {contact.companies?.name ||
-                  "-"}
-              </td>
+        <tbody>
+
+          {contacts.map(
+            (contact) => (
+              <tr key={contact.id}>
+
+                <td>
+                  <Link
+                    className="contact-name"
+                    to={
+                      `/contacts/${contact.id}`
+                    }
+                  >
+                    {contact.first_name}
+                    {" "}
+                    {contact.last_name ||
+                      ""}
+                  </Link>
+                </td>
 
 
-              <td>
-                {contact.email || "-"}
-              </td>
+                <td>
+                  {contact.companies
+                    ?.name ||
+                    "-"}
+                </td>
 
 
-              <td>
-                {contact.phone || "-"}
-              </td>
+                <td>
+                  {contact.email ||
+                    "-"}
+                </td>
 
 
-              <td>
-                {contact.job_title ||
-                  "-"}
-              </td>
+                <td>
+                  {contact.phone ||
+                    "-"}
+                </td>
 
 
-              <td>
-                <Link
-                  to={
-                    `/contacts/${contact.id}`
-                  }
-                >
-                  View
-                </Link>
-              </td>
+                <td>
+                  {contact.job_title ||
+                    "-"}
+                </td>
 
-            </tr>
-          )
-        )}
-      </tbody>
-    </table>
+
+                <td>
+                  <Link
+                    className="btn btn-secondary"
+                    to={
+                      `/contacts/${contact.id}`
+                    }
+                  >
+                    View
+                  </Link>
+                </td>
+
+              </tr>
+            )
+          )}
+
+        </tbody>
+
+      </table>
+
+    </div>
   );
 }
