@@ -10,6 +10,8 @@ import DashboardPage from "./pages/DashboardPage";
 import CompaniesPage from "./features/companies/CompaniesPage";
 import CompanyDetailsPage from "./features/companies/CompanyDetailsPage";
 import ContactPage from "./features/contacts/ContactsPage";
+import TeamAllocationPage
+  from "./features/team-allocation/TeamAllocationPage";
 import LeadsPage from "./features/leads/LeadsPage";
 import ApprovedLeadBoardPage
   from "./features/approved-lead-board/ApprovedLeadBoardPage";
@@ -38,6 +40,17 @@ function App() {
     </ProtectedRoute>
   }
 />
+
+<Route
+  path="/team-allocation"
+  element={
+    <ProtectedRoute>
+      <TeamAllocationPage />
+    </ProtectedRoute>
+  }
+/>
+
+
 
 <Route
   path="/lead-board"
