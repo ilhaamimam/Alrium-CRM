@@ -1,0 +1,53 @@
+.companies-layout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(
+      310px,
+      380px
+    )
+    minmax(
+      0,
+      1fr
+    );
+
+  gap: 22px;
+
+  align-items: start;
+}
+
+
+.company-name-link {
+  color:
+    #111111;
+
+  font-weight: 800;
+}
+
+
+.company-name-link:hover {
+  color:
+    var(--orange);
+}
+
+
+.company-details-actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 9px;
+
+  margin-bottom: 20px;
+}
+
+
+@media (
+  max-width: 1050px
+) {
+
+  .companies-layout {
+    grid-template-columns:
+      1fr;
+  }
+}

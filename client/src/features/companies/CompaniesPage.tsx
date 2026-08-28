@@ -4,9 +4,11 @@ import {
   useState,
 } from "react";
 
-import CompanyForm from "./CompanyForm";
+import CompanyForm
+  from "./CompanyForm";
 
-import CompanyTable from "./CompanyTable";
+import CompanyTable
+  from "./CompanyTable";
 
 import {
   fetchCompanies,
@@ -16,37 +18,54 @@ import type {
   Company,
 } from "./company.types";
 
+import "./companies.css";
+
 
 export default function CompaniesPage() {
-  const [companies, setCompanies] =
+  const [
+    companies,
+    setCompanies,
+  ] =
     useState<Company[]>([]);
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState("");
 
 
   const loadCompanies =
-    useCallback(async () => {
-      try {
-        setError("");
+    useCallback(
+      async () => {
+        try {
+          setError("");
 
-        const data =
-          await fetchCompanies();
+          const data =
+            await fetchCompanies();
 
-        setCompanies(data);
-      } catch (error) {
-        console.error(error);
+          setCompanies(data);
+        } catch (error) {
+          console.error(
+            "LOAD COMPANIES ERROR:",
+            error
+          );
 
-        setError(
-          "Unable to load companies"
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+          setError(
+            "Unable to load companies"
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
 
   useEffect(() => {
@@ -56,30 +75,70 @@ export default function CompaniesPage() {
 
   if (loading) {
     return (
-      <p>Loading companies...</p>
+      <div className="page-shell">
+
+        <div className="empty-state">
+          Loading companies...
+        </div>
+
+      </div>
     );
   }
 
 
   return (
-    <div>
-      <h1>Companies</h1>
+    <div className="page-shell">
+
+      <div className="page-header">
+
+        <h1 className="page-title">
+          Companies
+        </h1>
+
+        <p className="page-subtitle">
+          Manage customer organisations
+          and company information.
+        </p>
+
+      </div>
+
 
       {error && (
-        <p>{error}</p>
+        <p className="error-message">
+          {error}
+        </p>
       )}
 
-      <CompanyForm
-        onCreated={
-          loadCompanies
-        }
-      />
 
-      <CompanyTable
-        companies={
-          companies
-        }
-      />
+      <div className="companies-layout">
+
+        <div className="card">
+
+          <CompanyForm
+            onCreated={
+              loadCompanies
+            }
+          />
+
+        </div>
+
+
+        <div className="card">
+
+          <h2 className="card-title">
+            Company Directory
+          </h2>
+
+          <CompanyTable
+            companies={
+              companies
+            }
+          />
+
+        </div>
+
+      </div>
+
     </div>
   );
 }

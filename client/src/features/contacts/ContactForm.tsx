@@ -27,16 +27,28 @@ interface Props {
 export default function ContactForm({
   onCreated,
 }: Props) {
-  const [companies, setCompanies] =
+  const [
+    companies,
+    setCompanies,
+  ] =
     useState<Company[]>([]);
 
-  const [companyId, setCompanyId] =
+  const [
+    companyId,
+    setCompanyId,
+  ] =
     useState("");
 
-  const [firstName, setFirstName] =
+  const [
+    firstName,
+    setFirstName,
+  ] =
     useState("");
 
-  const [lastName, setLastName] =
+  const [
+    lastName,
+    setLastName,
+  ] =
     useState("");
 
   const [email, setEmail] =
@@ -45,7 +57,10 @@ export default function ContactForm({
   const [phone, setPhone] =
     useState("");
 
-  const [jobTitle, setJobTitle] =
+  const [
+    jobTitle,
+    setJobTitle,
+  ] =
     useState("");
 
   const [notes, setNotes] =
@@ -54,66 +69,75 @@ export default function ContactForm({
   const [loading, setLoading] =
     useState(false);
 
-  const [companiesLoading, setCompaniesLoading] =
-    useState(true);
-
   const [error, setError] =
     useState("");
 
 
   useEffect(() => {
-    const loadCompanies = async () => {
-      try {
-        const data =
-          await fetchCompanies();
+    const loadCompanies =
+      async () => {
+        try {
+          const data =
+            await fetchCompanies();
 
-        setCompanies(data);
-      } catch (error) {
-        console.error(
-          "Unable to load companies:",
-          error
-        );
-
-        setError(
-          "Unable to load companies"
-        );
-      } finally {
-        setCompaniesLoading(false);
-      }
-    };
+          setCompanies(data);
+        } catch (error) {
+          console.error(
+            error
+          );
+        }
+      };
 
     loadCompanies();
   }, []);
 
 
   const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
+    event:
+      FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     setError("");
+
+
+    if (!firstName.trim()) {
+      setError(
+        "First name is required"
+      );
+
+      return;
+    }
+
+
     setLoading(true);
+
 
     try {
       await createContact({
         companyId:
-          companyId || undefined,
+          companyId || null,
 
-        firstName,
+        firstName:
+          firstName.trim(),
 
-        lastName,
+        lastName:
+          lastName.trim(),
 
-        email,
+        email:
+          email.trim(),
 
-        phone,
+        phone:
+          phone.trim(),
 
-        jobTitle,
+        jobTitle:
+          jobTitle.trim(),
 
-        notes,
+        notes:
+          notes.trim(),
       });
 
 
-      // Clear form
       setCompanyId("");
       setFirstName("");
       setLastName("");
@@ -123,19 +147,20 @@ export default function ContactForm({
       setNotes("");
 
 
-      // Reload ContactPage list
       onCreated();
 
     } catch (error) {
       console.error(
-        "Create contact error:",
+        "CREATE CONTACT ERROR:",
         error
       );
 
-      if (axios.isAxiosError(error)) {
+
+      if (
+        axios.isAxiosError(error)
+      ) {
         setError(
           error.response?.data?.message ||
-            error.message ||
             "Unable to create contact"
         );
       } else {
@@ -143,6 +168,7 @@ export default function ContactForm({
           "Unable to create contact"
         );
       }
+
     } finally {
       setLoading(false);
     }
@@ -150,12 +176,25 @@ export default function ContactForm({
 
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Add Contact</h2>
+    <form
+      className="form-grid"
+      onSubmit={handleSubmit}
+    >
+
+      <div className="form-group form-group-full">
+
+        <h2 className="card-title">
+          Add Contact
+        </h2>
+
+      </div>
 
 
-      <div>
-        <label>Company</label>
+      <div className="form-group form-group-full">
+
+        <label>
+          Company
+        </label>
 
         <select
           value={companyId}
@@ -164,7 +203,6 @@ export default function ContactForm({
               event.target.value
             )
           }
-          disabled={companiesLoading}
         >
           <option value="">
             No Company
@@ -181,14 +219,17 @@ export default function ContactForm({
             )
           )}
         </select>
+
       </div>
 
 
-      <div>
-        <label>First Name</label>
+      <div className="form-group">
+
+        <label>
+          First Name
+        </label>
 
         <input
-          type="text"
           value={firstName}
           onChange={(event) =>
             setFirstName(
@@ -197,14 +238,17 @@ export default function ContactForm({
           }
           required
         />
+
       </div>
 
 
-      <div>
-        <label>Last Name</label>
+      <div className="form-group">
+
+        <label>
+          Last Name
+        </label>
 
         <input
-          type="text"
           value={lastName}
           onChange={(event) =>
             setLastName(
@@ -212,11 +256,15 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
-        <label>Email</label>
+      <div className="form-group">
+
+        <label>
+          Email
+        </label>
 
         <input
           type="email"
@@ -227,14 +275,17 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
-        <label>Phone</label>
+      <div className="form-group">
+
+        <label>
+          Phone
+        </label>
 
         <input
-          type="text"
           value={phone}
           onChange={(event) =>
             setPhone(
@@ -242,14 +293,17 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
-        <label>Job Title</label>
+      <div className="form-group form-group-full">
+
+        <label>
+          Job Title
+        </label>
 
         <input
-          type="text"
           value={jobTitle}
           onChange={(event) =>
             setJobTitle(
@@ -257,11 +311,15 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
-        <label>Notes</label>
+      <div className="form-group form-group-full">
+
+        <label>
+          Notes
+        </label>
 
         <textarea
           value={notes}
@@ -271,22 +329,29 @@ export default function ContactForm({
             )
           }
         />
+
       </div>
 
 
       {error && (
-        <p>{error}</p>
+        <p className="error-message form-group-full">
+          {error}
+        </p>
       )}
 
 
-      <button
-        type="submit"
-        disabled={loading}
-      >
-        {loading
-          ? "Saving..."
-          : "Create Contact"}
-      </button>
+      <div className="button-row form-group-full">
+
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Creating..."
+            : "Create Contact"}
+        </button>
+
+      </div>
 
     </form>
   );

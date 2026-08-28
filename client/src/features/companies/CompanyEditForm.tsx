@@ -30,7 +30,6 @@ export default function CompanyEditForm({
   onUpdated,
   onCancel,
 }: Props) {
-
   const [name, setName] =
     useState(company.name);
 
@@ -59,7 +58,6 @@ export default function CompanyEditForm({
       company.notes ?? ""
     );
 
-
   const [loading, setLoading] =
     useState(false);
 
@@ -68,38 +66,46 @@ export default function CompanyEditForm({
 
 
   const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
+    event:
+      FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
-    setLoading(true);
     setError("");
+    setLoading(true);
 
 
     try {
-
-      const updatedCompany =
+      const updated =
         await updateCompany(
           company.id,
           {
-            name,
-            industry,
-            website,
-            phone,
-            address,
-            notes,
+            name:
+              name.trim(),
+
+            industry:
+              industry.trim(),
+
+            website:
+              website.trim(),
+
+            phone:
+              phone.trim(),
+
+            address:
+              address.trim(),
+
+            notes:
+              notes.trim(),
           }
         );
 
 
-      onUpdated(
-        updatedCompany
-      );
+      onUpdated(updated);
 
     } catch (error) {
-
       console.error(
-        "Update company error:",
+        "UPDATE COMPANY ERROR:",
         error
       );
 
@@ -107,42 +113,44 @@ export default function CompanyEditForm({
       if (
         axios.isAxiosError(error)
       ) {
-
         setError(
           error.response?.data?.message ||
-          error.message ||
-          "Unable to update company"
+            "Unable to update company"
         );
-
       } else {
-
         setError(
           "Unable to update company"
         );
-
       }
 
     } finally {
-
       setLoading(false);
-
     }
   };
 
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      className="form-grid"
+      onSubmit={handleSubmit}
+    >
 
-      <h2>Edit Company</h2>
+      <div className="form-group form-group-full">
+
+        <h2 className="card-title">
+          Edit Company
+        </h2>
+
+      </div>
 
 
-      <div>
+      <div className="form-group form-group-full">
+
         <label>
           Company Name
         </label>
 
         <input
-          type="text"
           value={name}
           onChange={(event) =>
             setName(
@@ -151,16 +159,17 @@ export default function CompanyEditForm({
           }
           required
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group">
+
         <label>
           Industry
         </label>
 
         <input
-          type="text"
           value={industry}
           onChange={(event) =>
             setIndustry(
@@ -168,16 +177,17 @@ export default function CompanyEditForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group">
+
         <label>
           Website
         </label>
 
         <input
-          type="text"
           value={website}
           onChange={(event) =>
             setWebsite(
@@ -185,16 +195,17 @@ export default function CompanyEditForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group">
+
         <label>
           Phone
         </label>
 
         <input
-          type="text"
           value={phone}
           onChange={(event) =>
             setPhone(
@@ -202,16 +213,17 @@ export default function CompanyEditForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group">
+
         <label>
           Address
         </label>
 
         <input
-          type="text"
           value={address}
           onChange={(event) =>
             setAddress(
@@ -219,10 +231,12 @@ export default function CompanyEditForm({
             )
           }
         />
+
       </div>
 
 
-      <div>
+      <div className="form-group form-group-full">
+
         <label>
           Notes
         </label>
@@ -235,31 +249,39 @@ export default function CompanyEditForm({
             )
           }
         />
+
       </div>
 
 
       {error && (
-        <p>{error}</p>
+        <p className="error-message form-group-full">
+          {error}
+        </p>
       )}
 
 
-      <button
-        type="submit"
-        disabled={loading}
-      >
-        {loading
-          ? "Updating..."
-          : "Save Changes"}
-      </button>
+      <div className="button-row form-group-full">
+
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Updating..."
+            : "Save Changes"}
+        </button>
 
 
-      <button
-        type="button"
-        onClick={onCancel}
-        disabled={loading}
-      >
-        Cancel
-      </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={onCancel}
+          disabled={loading}
+        >
+          Cancel
+        </button>
+
+      </div>
 
     </form>
   );

@@ -1,0 +1,94 @@
+.team-management-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap: 22px;
+}
+
+
+.team-management-section {
+  min-width: 0;
+}
+
+
+.team-filter {
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 12px;
+
+  margin-bottom: 18px;
+}
+
+
+.team-filter .form-group {
+  width:
+    min(
+      330px,
+      100%
+    );
+}
+
+
+.team-member-list {
+  margin-top: 20px;
+}
+
+
+.team-summary {
+  padding: 12px 14px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius:
+    var(--radius-md);
+
+  background:
+    #fafafa;
+}
+
+
+.team-count {
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-width: 30px;
+  min-height: 30px;
+
+  border-radius: 999px;
+
+  background:
+    var(--orange);
+
+  color:
+    #ffffff;
+
+  font-size: 0.72rem;
+
+  font-weight: 850;
+}
+
+
+@media (
+  max-width: 1050px
+) {
+
+  .team-management-grid {
+    grid-template-columns:
+      1fr;
+  }
+}

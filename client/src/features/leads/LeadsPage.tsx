@@ -8,50 +8,64 @@ import {
   fetchLeads,
 } from "./lead.api";
 
-import LeadForm from "./LeadForm";
+import LeadForm
+  from "./LeadForm";
 
-import LeadTable from "./LeadTable";
+import LeadTable
+  from "./LeadTable";
 
 import type {
   Lead,
 } from "./lead.types";
 
+import "./leads.css";
+
 
 export default function LeadsPage() {
-  const [leads, setLeads] =
+  const [
+    leads,
+    setLeads,
+  ] =
     useState<Lead[]>([]);
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState("");
 
 
   const loadLeads =
-    useCallback(async () => {
-      try {
-        setError("");
+    useCallback(
+      async () => {
+        try {
+          setError("");
 
-        const data =
-          await fetchLeads();
+          const data =
+            await fetchLeads();
 
-        setLeads(data);
+          setLeads(data);
+        } catch (error) {
+          console.error(
+            "LOAD LEADS ERROR:",
+            error
+          );
 
-      } catch (error) {
-        console.error(
-          "LOAD LEADS ERROR:",
-          error
-        );
-
-        setError(
-          "Unable to load leads"
-        );
-
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+          setError(
+            "Unable to load leads"
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
 
   useEffect(() => {
@@ -61,40 +75,69 @@ export default function LeadsPage() {
 
   if (loading) {
     return (
-      <p>Loading leads...</p>
+      <div className="page-shell">
+
+        <div className="empty-state">
+          Loading leads...
+        </div>
+
+      </div>
     );
   }
 
 
   return (
-    <div>
+    <div className="page-shell">
 
-      <h1>Leads</h1>
+      <div className="page-header">
+
+        <h1 className="page-title">
+          Leads
+        </h1>
+
+        <p className="page-subtitle">
+          Track customer opportunities,
+          sales ownership and lead status.
+        </p>
+
+      </div>
 
 
       {error && (
-        <p>{error}</p>
+        <p className="error-message">
+          {error}
+        </p>
       )}
 
 
-      <LeadForm
-        onCreated={
-          loadLeads
-        }
-      />
+      <div className="leads-layout">
+
+        <div className="card">
+
+          <LeadForm
+            onCreated={
+              loadLeads
+            }
+          />
+
+        </div>
 
 
-      <hr />
+        <div className="card">
 
+          <h2 className="card-title">
+            Lead Pipeline
+          </h2>
 
-      <h2>
-        Current Leads
-      </h2>
+          <LeadTable
+            leads={
+              leads
+            }
+          />
 
+        </div>
 
-      <LeadTable
-        leads={leads}
-      />
+      </div>
 
     </div>
   );

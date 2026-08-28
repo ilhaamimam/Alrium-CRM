@@ -1,0 +1,413 @@
+.completion-review-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(
+        310px,
+        1fr
+      )
+    );
+
+  gap: 20px;
+}
+
+
+.completion-filter {
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 14px;
+}
+
+
+.completion-filter
+.form-group {
+  width:
+    min(
+      320px,
+      100%
+    );
+}
+
+
+.completion-review-card {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease;
+}
+
+
+.completion-review-card:hover {
+  transform:
+    translateY(-3px);
+
+  border-color:
+    var(--orange);
+}
+
+
+.completion-review-header {
+  display: flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap: 15px;
+}
+
+
+.completion-review-header h2 {
+  margin: 0;
+
+  color:
+    #111111;
+
+  font-size: 1.05rem;
+}
+
+
+.completion-review-header p {
+  margin:
+    5px 0 0;
+
+  color:
+    #777777;
+
+  font-size: 0.8rem;
+}
+
+
+.completion-badge {
+  display: inline-flex;
+
+  padding:
+    5px 9px;
+
+  border-radius:
+    999px;
+
+  font-size:
+    0.68rem;
+
+  font-weight:
+    850;
+
+  text-transform:
+    capitalize;
+}
+
+
+.completion-pending_review {
+  border:
+    1px solid
+    var(--orange-border);
+
+  background:
+    var(--orange-light);
+
+  color:
+    var(--orange-dark);
+}
+
+
+.completion-changes_requested {
+  background:
+    var(--orange);
+
+  color:
+    #ffffff;
+}
+
+
+.completion-confirmed {
+  background:
+    #111111;
+
+  color:
+    #ffffff;
+}
+
+
+.completion-card-meta {
+  display: grid;
+
+  gap: 7px;
+
+  color:
+    #777777;
+
+  font-size:
+    0.76rem;
+}
+
+
+.completion-message {
+  padding: 15px;
+
+  border-radius:
+    var(--radius-md);
+
+  line-height: 1.5;
+}
+
+
+.completion-pending {
+  border:
+    1px solid
+    var(--orange-border);
+
+  background:
+    var(--orange-light);
+
+  color:
+    var(--orange-dark);
+}
+
+
+.completion-changes {
+  border:
+    1px solid
+    var(--orange);
+
+  background:
+    #fff5eb;
+
+  color:
+    #a84d00;
+}
+
+
+.completion-confirmed {
+  background:
+    #111111;
+
+  color:
+    #ffffff;
+}
+
+
+.completion-check {
+  display: flex;
+
+  align-items: center;
+
+  justify-content:
+    space-between;
+
+  padding:
+    13px 15px;
+
+  border:
+    1px solid
+    #eeeeee;
+
+  border-radius:
+    var(--radius-sm);
+
+  background:
+    #fafafa;
+}
+
+
+.completion-review-actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 9px;
+
+  margin-top: 18px;
+}
+
+
+/* FINAL UPDATES */
+
+.final-update-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(
+        340px,
+        1fr
+      )
+    );
+
+  gap: 20px;
+}
+
+
+.final-update-card {
+  position: relative;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 20px;
+
+  overflow: hidden;
+}
+
+
+.final-update-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 5px;
+
+  background:
+    var(--orange);
+}
+
+
+.final-update-header {
+  display: flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap: 15px;
+}
+
+
+.final-update-header h2 {
+  margin:
+    4px 0;
+
+  color:
+    #111111;
+}
+
+
+.final-update-header p {
+  margin: 0;
+
+  color:
+    #777777;
+}
+
+
+.final-update-label {
+  color:
+    var(--orange);
+
+  font-size:
+    0.67rem;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    0.08em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.final-update-details {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap: 10px;
+}
+
+
+.final-update-details div {
+  padding: 12px;
+
+  border:
+    1px solid
+    #eeeeee;
+
+  border-radius:
+    9px;
+
+  background:
+    #fafafa;
+}
+
+
+.final-update-details span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color:
+    #999999;
+
+  font-size:
+    0.64rem;
+
+  font-weight:
+    800;
+
+  text-transform:
+    uppercase;
+}
+
+
+.final-update-notes p {
+  color:
+    #666666;
+
+  line-height: 1.65;
+}
+
+
+.final-update-footer {
+  margin-top: auto;
+
+  padding-top: 14px;
+
+  border-top:
+    1px solid
+    #eeeeee;
+
+  color:
+    #999999;
+
+  font-size:
+    0.7rem;
+}
+
+
+@media (
+  max-width: 700px
+) {
+
+  .final-update-details {
+    grid-template-columns:
+      1fr;
+  }
+}

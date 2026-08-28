@@ -15,99 +15,122 @@ interface Props {
 export default function LeadTable({
   leads,
 }: Props) {
-  if (leads.length === 0) {
+  if (
+    leads.length === 0
+  ) {
     return (
-      <p>No leads found.</p>
+      <div className="empty-state">
+        No leads found.
+      </div>
     );
   }
 
 
   return (
-    <table>
+    <div className="table-wrap">
 
-      <thead>
-        <tr>
-          <th>Title</th>
+      <table>
 
-          <th>Company</th>
+        <thead>
+          <tr>
+            <th>Title</th>
 
-          <th>Contact</th>
+            <th>Company</th>
 
-          <th>Budget</th>
+            <th>Contact</th>
 
-          <th>Temperature</th>
+            <th>Budget</th>
 
-          <th>Status</th>
+            <th>Temperature</th>
 
-          <th>Actions</th>
-        </tr>
-      </thead>
+            <th>Status</th>
 
-
-      <tbody>
-
-        {leads.map(
-          (lead) => (
-            <tr key={lead.id}>
-
-              <td>
-                <Link
-                  to={
-                    `/leads/${lead.id}`
-                  }
-                >
-                  {lead.title}
-                </Link>
-              </td>
+            <th>Actions</th>
+          </tr>
+        </thead>
 
 
-              <td>
-                {lead.companies?.name ||
-                  "-"}
-              </td>
+        <tbody>
+
+          {leads.map(
+            (lead) => (
+              <tr key={lead.id}>
+
+                <td>
+                  <Link
+                    className="lead-title-link"
+                    to={
+                      `/leads/${lead.id}`
+                    }
+                  >
+                    {lead.title}
+                  </Link>
+                </td>
 
 
-              <td>
-                {lead.contacts
-                  ? `${lead.contacts.first_name} ${lead.contacts.last_name || ""}`
-                  : "-"}
-              </td>
+                <td>
+                  {lead.companies
+                    ?.name ||
+                    "-"}
+                </td>
 
 
-              <td>
-                {lead.estimated_budget !==
-                null
-                  ? lead.estimated_budget
-                  : "-"}
-              </td>
+                <td>
+                  {lead.contacts
+                    ? `${lead.contacts.first_name} ${lead.contacts.last_name || ""}`
+                    : "-"}
+                </td>
 
 
-              <td>
-                {lead.temperature}
-              </td>
+                <td>
+                  {lead.estimated_budget ??
+                    "-"}
+                </td>
 
 
-              <td>
-                {lead.workflow_stage}
-              </td>
+                <td>
+                  <span
+                    className={
+                      lead.temperature ===
+                      "hot"
+                        ? "badge badge-danger"
+                        : "badge badge-primary"
+                    }
+                  >
+                    {lead.temperature ===
+                    "hot"
+                      ? "Hot"
+                      : "Cold"}
+                  </span>
+                </td>
 
 
-              <td>
-                <Link
-                  to={
-                    `/leads/${lead.id}`
-                  }
-                >
-                  View
-                </Link>
-              </td>
+                <td>
+                  <span className="badge">
+                    {lead.workflow_stage}
+                  </span>
+                </td>
 
-            </tr>
-          )
-        )}
 
-      </tbody>
+                <td>
+                  <Link
+                    className="btn btn-secondary"
+                    to={
+                      `/leads/${lead.id}`
+                    }
+                  >
+                    View
+                  </Link>
+                </td>
 
-    </table>
+              </tr>
+            )
+          )}
+
+        </tbody>
+
+      </table>
+
+    </div>
   );
 }

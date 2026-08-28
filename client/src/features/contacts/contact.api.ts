@@ -6,37 +6,34 @@ import type {
   UpdateContactInput,
 } from "./contact.types";
 
-
 export const fetchContacts =
   async (): Promise<Contact[]> => {
-
     const response =
-      await api.get(
-        "/contacts"
-      );
+      await api.get("/contacts");
 
     return response.data.data;
   };
-
 
 export const fetchContactById =
   async (
-    id: string
+    contactId: string
   ): Promise<Contact> => {
-
     const response =
       await api.get(
-        `/contacts/${id}`
+        `/contacts/${contactId}`
       );
 
     return response.data.data;
   };
-
 
 export const createContact =
   async (
     input: CreateContactInput
   ): Promise<Contact> => {
+    console.log(
+      "CONTACT API INPUT:",
+      input
+    );
 
     const response =
       await api.post(
@@ -47,16 +44,14 @@ export const createContact =
     return response.data.data;
   };
 
-
 export const updateContact =
   async (
-    id: string,
+    contactId: string,
     input: UpdateContactInput
   ): Promise<Contact> => {
-
     const response =
       await api.patch(
-        `/contacts/${id}`,
+        `/contacts/${contactId}`,
         input
       );
 
