@@ -8,7 +8,9 @@ import contactRoutes from "./routes/contact.routes";
 import profileRoutes from "./routes/profile.routes";
 import teamAllocationRoutes
   from "./routes/teamAllocation.routes";
-import companyRoutes from "./routes/company.routes";
+import teamProgressRoutes
+  from "./routes/teamProgress.routes";
+  import companyRoutes from "./routes/company.routes";
 import approvedLeadBoardRoutes
   from "./routes/approvedLeadBoard.routes";
 import leadRoutes from "./routes/lead.routes";
@@ -22,6 +24,12 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(
+  "/api",
+  teamProgressRoutes
+);
+
 
 app.use(
   "/api",

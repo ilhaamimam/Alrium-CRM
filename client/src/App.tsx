@@ -6,7 +6,11 @@ import {
 
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import TeamProgressPage
+  from "./features/team-progress/TeamProgressPage";
 
+import TeamProjectDetailsPage
+  from "./features/team-progress/TeamProjectDetailsPage";
 import CompaniesPage from "./features/companies/CompaniesPage";
 import CompanyDetailsPage from "./features/companies/CompanyDetailsPage";
 import ContactPage from "./features/contacts/ContactsPage";
@@ -40,6 +44,27 @@ function App() {
     </ProtectedRoute>
   }
 />
+
+<Route
+  path="/team-progress"
+  element={
+    <ProtectedRoute>
+      <TeamProgressPage />
+    </ProtectedRoute>
+  }
+/>
+
+
+<Route
+  path="/team-progress/:id"
+  element={
+    <ProtectedRoute>
+      <TeamProjectDetailsPage />
+    </ProtectedRoute>
+  }
+/>
+
+
 
 <Route
   path="/team-allocation"

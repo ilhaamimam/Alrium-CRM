@@ -213,6 +213,28 @@ export default function DashboardPage() {
               </>
             )}
 
+            {(
+  profile.role ===
+    "team_member" ||
+  profile.role ===
+    "senior_manager"
+) && (
+  <Link
+    className="dashboard-link-card"
+    to="/team-progress"
+  >
+    <span className="dashboard-link-title">
+      Team Progress
+    </span>
+
+    <span className="dashboard-link-description">
+      Work on assigned projects,
+      manage progress and complete
+      project tasks.
+    </span>
+  </Link>
+)}
+
           </div>
 
 
