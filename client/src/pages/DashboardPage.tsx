@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -7,8 +8,9 @@ import {
   Link,
 } from "react-router-dom";
 
-import { api } from "../api/http";
-import { useAuth } from "../auth/useAuth";
+import {
+  api,
+} from "../api/http";
 
 import "./DashboardPage.css";
 
@@ -21,8 +23,6 @@ interface Profile {
   email: string;
 
   role: string;
-
-  is_active: boolean;
 }
 
 
@@ -35,16 +35,12 @@ export default function DashboardPage() {
       null
     );
 
+
   const [
     error,
     setError,
   ] =
     useState("");
-
-  const {
-    signOut,
-  } =
-    useAuth();
 
 
   useEffect(() => {
@@ -57,20 +53,51 @@ export default function DashboardPage() {
           setProfile(
             response.data.data.user
           );
+
         } catch (error) {
           console.error(
-            "LOAD PROFILE ERROR:",
+            "DASHBOARD PROFILE ERROR:",
             error
           );
 
           setError(
-            "Unable to load CRM profile"
+            "Unable to load profile"
           );
         }
       };
 
+
     loadProfile();
+
   }, []);
+
+
+  const initials =
+    useMemo(() => {
+      if (
+        profile?.full_name
+      ) {
+        return profile.full_name
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map(
+            (word) =>
+              word[0]
+                ?.toUpperCase()
+          )
+          .join("");
+      }
+
+
+      return profile?.email
+        ?.slice(0, 2)
+        .toUpperCase() ||
+        "CR";
+
+    }, [
+      profile,
+    ]);
 
 
   return (
@@ -83,9 +110,9 @@ export default function DashboardPage() {
         </h1>
 
         <p className="page-subtitle">
-          Welcome to Altrium CRM.
-          Manage companies, contacts,
-          leads and project workflows.
+          Manage customers, leads,
+          approved projects and team
+          delivery from one workspace.
         </p>
 
       </div>
@@ -98,210 +125,175 @@ export default function DashboardPage() {
       )}
 
 
-      {profile ? (
-        <>
-          <div className="card">
+      {profile && (
+        <div className="card dashboard-profile-card">
 
-            <div className="dashboard-profile">
+          <div className="dashboard-profile-main">
 
-              <div className="dashboard-profile-info">
+            <div className="dashboard-profile-avatar">
+              {initials}
+            </div>
 
-                <h2>
-                  {profile.full_name ||
-                    profile.email}
-                </h2>
 
-                <p>
-                  {profile.email}
-                </p>
+            <div className="dashboard-profile-info">
 
-                <p>
-                  Role:{" "}
-                  <strong>
-                    {profile.role}
-                  </strong>
-                </p>
+              <h2>
+                {profile.full_name ||
+                  profile.email}
+              </h2>
 
-              </div>
+              <p>
+                {profile.email}
+              </p>
+
+              <p>
+                {formatRole(
+                  profile.role
+                )}
+              </p>
 
             </div>
 
           </div>
 
-
-          <div className="dashboard-links">
-
-            <Link
-              className="dashboard-link-card"
-              to="/companies"
-            >
-              <span className="dashboard-link-title">
-                Companies
-              </span>
-
-              <span className="dashboard-link-description">
-                Manage customer
-                organisations and business
-                information.
-              </span>
-            </Link>
-
-
-            <Link
-              className="dashboard-link-card"
-              to="/contacts"
-            >
-              <span className="dashboard-link-title">
-                Contacts
-              </span>
-
-              <span className="dashboard-link-description">
-                Manage customer contacts
-                connected to companies.
-              </span>
-            </Link>
-
-
-            <Link
-              className="dashboard-link-card"
-              to="/leads"
-            >
-              <span className="dashboard-link-title">
-                Leads
-              </span>
-
-              <span className="dashboard-link-description">
-                Create, manage and track
-                customer opportunities.
-              </span>
-            </Link>
-
-
-            {profile.role ===
-              "senior_manager" && (
-              <>
-                <Link
-                  className="dashboard-link-card"
-                  to="/lead-board"
-                >
-                  <span className="dashboard-link-title">
-                    Approved Lead Board
-                  </span>
-
-                  <span className="dashboard-link-description">
-                    Manage approved Hot
-                    leads and project
-                    statuses.
-                  </span>
-                </Link>
-
-
-                <Link
-                  className="dashboard-link-card"
-                  to="/team-allocation"
-                >
-                  <span className="dashboard-link-title">
-                    Team Allocation
-                  </span>
-
-                  <span className="dashboard-link-description">
-                    Create teams, manage
-                    members and allocate
-                    approved leads.
-                  </span>
-                </Link>
-              </>
-            )}
-
-            {(
-  profile.role ===
-    "team_member" ||
-  profile.role ===
-    "senior_manager"
-) && (
-  <Link
-    className="dashboard-link-card"
-    to="/team-progress"
-  >
-    <span className="dashboard-link-title">
-      Team Progress
-    </span>
-
-    <span className="dashboard-link-description">
-      Work on assigned projects,
-      manage progress and complete
-      project tasks.
-    </span>
-  </Link>
-)}
-
-{profile.role ===
-  "senior_manager" && (
-
-  <Link
-    className="dashboard-link-card"
-    to="/project-completion"
-  >
-
-    <span className="dashboard-link-title">
-      Project Completion Review
-    </span>
-
-    <span className="dashboard-link-description">
-      Review projects submitted as
-      completed and confirm their final
-      Done status.
-    </span>
-
-  </Link>
-)}
-{(
-  profile.role ===
-    "sales_rep" ||
-  profile.role ===
-    "sales_manager"
-) && (
-
-  <Link
-    className="dashboard-link-card"
-    to="/final-updates"
-  >
-
-    <span className="dashboard-link-title">
-      Final Project Updates
-    </span>
-
-    <span className="dashboard-link-description">
-      View completed projects confirmed
-      by the Senior Manager.
-    </span>
-
-  </Link>
-)}
-          </div>
-
-
-          <div className="dashboard-actions">
-
-            <button
-              className="btn-secondary"
-              onClick={() =>
-                signOut()
-              }
-            >
-              Logout
-            </button>
-
-          </div>
-        </>
-      ) : (
-        !error && (
-          <div className="empty-state">
-            Loading profile...
-          </div>
-        )
+        </div>
       )}
+
+
+      <div className="dashboard-links">
+
+        {(
+          profile?.role ===
+            "sales_rep" ||
+          profile?.role ===
+            "sales_manager" ||
+          profile?.role ===
+            "senior_manager"
+        ) && (
+          <>
+            <DashboardCard
+              to="/companies"
+              title="Companies"
+              description="Customer organisations and company records."
+            />
+
+
+            <DashboardCard
+              to="/contacts"
+              title="Contacts"
+              description="People connected to your customer companies."
+            />
+
+
+            <DashboardCard
+              to="/leads"
+              title="Leads"
+              description="Manage Cold and Hot sales opportunities."
+            />
+          </>
+        )}
+
+
+        {profile?.role ===
+          "senior_manager" && (
+          <>
+            <DashboardCard
+              to="/lead-board"
+              title="Approved Lead Board"
+              description="Manage approved leads and project stages."
+            />
+
+
+            <DashboardCard
+              to="/team-allocation"
+              title="Team Allocation"
+              description="Build teams and allocate approved projects."
+            />
+
+
+            <DashboardCard
+              to="/project-completion"
+              title="Completion Review"
+              description="Review team-completed projects and confirm Done."
+            />
+          </>
+        )}
+
+
+        {(
+          profile?.role ===
+            "team_member" ||
+          profile?.role ===
+            "senior_manager"
+        ) && (
+          <DashboardCard
+            to="/team-progress"
+            title="Team Progress"
+            description="Work on assigned projects and project tasks."
+          />
+        )}
+
+
+        {(
+          profile?.role ===
+            "sales_rep" ||
+          profile?.role ===
+            "sales_manager"
+        ) && (
+          <DashboardCard
+            to="/final-updates"
+            title="Final Updates"
+            description="View projects confirmed Done after delivery."
+          />
+        )}
+
+      </div>
 
     </div>
   );
+}
+
+
+function DashboardCard({
+  to,
+  title,
+  description,
+}: {
+  to: string;
+
+  title: string;
+
+  description: string;
+}) {
+  return (
+    <Link
+      className="dashboard-link-card"
+      to={to}
+    >
+
+      <span className="dashboard-link-title">
+        {title}
+      </span>
+
+      <span className="dashboard-link-description">
+        {description}
+      </span>
+
+    </Link>
+  );
+}
+
+
+function formatRole(
+  role: string
+) {
+  return role
+    .split("_")
+    .map(
+      (word) =>
+        word.charAt(0)
+          .toUpperCase() +
+        word.slice(1)
+    )
+    .join(" ");
 }

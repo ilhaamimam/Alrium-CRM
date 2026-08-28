@@ -4,14 +4,15 @@ import type {
 
 import {
   Navigate,
+  useLocation,
 } from "react-router-dom";
 
 import {
   useAuth,
 } from "../../auth/useAuth";
 
-import AppHeader
-  from "../../components/AppHeader";
+import AppLayout
+  from "../../components/layout/AppLayout";
 
 
 interface Props {
@@ -29,12 +30,26 @@ export default function ProtectedRoute({
     useAuth();
 
 
+  const location =
+    useLocation();
+
+
+  /*
+   * Only show this while Supabase
+   * is genuinely checking the session.
+   */
   if (loading) {
     return (
-      <div className="page-shell">
+      <div className="auth-loading-screen">
 
-        <div className="empty-state">
-          Loading...
+        <div className="auth-loading-box">
+
+          <div className="auth-loading-spinner" />
+
+          <span>
+            Loading CRM...
+          </span>
+
         </div>
 
       </div>
@@ -42,21 +57,34 @@ export default function ProtectedRoute({
   }
 
 
+  /*
+   * Session check finished,
+   * but no logged-in user.
+   */
   if (!user) {
     return (
       <Navigate
         to="/login"
+        state={{
+          from:
+            location.pathname,
+        }}
         replace
       />
     );
   }
 
 
+  /*
+   * Logged in.
+   *
+   * Load permanent left sidebar.
+   */
   return (
-    <>
-      <AppHeader />
+    <AppLayout>
 
       {children}
-    </>
+
+    </AppLayout>
   );
 }

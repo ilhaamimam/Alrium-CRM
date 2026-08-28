@@ -10,12 +10,16 @@ import type {
   User,
 } from "@supabase/supabase-js";
 
-import { supabase } from "../lib/supabase";
+import {
+  supabase,
+} from "../lib/supabase";
 
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: User | null;
+
   session: Session | null;
+
   loading: boolean;
 
   signIn: (
@@ -28,9 +32,9 @@ interface AuthContextValue {
 
 
 export const AuthContext =
-  createContext<AuthContextValue | undefined>(
-    undefined
-  );
+  createContext<
+    AuthContextValue | undefined
+  >(undefined);
 
 
 interface Props {
@@ -38,94 +42,242 @@ interface Props {
 }
 
 
-export const AuthProvider = ({
+export default function AuthProvider({
   children,
-}: Props) => {
-  const [user, setUser] =
-    useState<User | null>(null);
+}: Props) {
+  const [
+    user,
+    setUser,
+  ] =
+    useState<User | null>(
+      null
+    );
 
-  const [session, setSession] =
-    useState<Session | null>(null);
 
-  const [loading, setLoading] =
+  const [
+    session,
+    setSession,
+  ] =
+    useState<Session | null>(
+      null
+    );
+
+
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
 
   useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        setSession(data.session);
-
-        setUser(
-          data.session?.user ?? null
-        );
-
-        setLoading(false);
-      });
+    let mounted =
+      true;
 
 
-    const {
-      data: { subscription },
-    } =
-      supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          setSession(session);
+    /*
+     * ---------------------------------------
+     * Load current Supabase session
+     * ---------------------------------------
+     */
+    const initialiseAuth =
+      async () => {
+        try {
+          const {
+            data,
+            error,
+          } =
+            await supabase.auth
+              .getSession();
 
-          setUser(
-            session?.user ?? null
+
+          if (error) {
+            console.error(
+              "GET SESSION ERROR:",
+              error
+            );
+          }
+
+
+          if (!mounted) {
+            return;
+          }
+
+
+          setSession(
+            data.session
           );
 
-          setLoading(false);
+
+          setUser(
+            data.session?.user ??
+              null
+          );
+
+        } catch (error) {
+          console.error(
+            "AUTH INITIALISATION ERROR:",
+            error
+          );
+
+
+          if (mounted) {
+            setSession(null);
+
+            setUser(null);
+          }
+
+        } finally {
+          /*
+           * THIS IS THE IMPORTANT FIX.
+           *
+           * loading must always become false,
+           * even if Supabase returns an error.
+           */
+          if (mounted) {
+            setLoading(false);
+          }
         }
-      );
+      };
+
+
+    initialiseAuth();
+
+
+    /*
+     * ---------------------------------------
+     * Listen for login/logout/session changes
+     * ---------------------------------------
+     */
+    const {
+      data: authListener,
+    } =
+      supabase.auth
+        .onAuthStateChange(
+          (
+            _event,
+            newSession
+          ) => {
+            if (!mounted) {
+              return;
+            }
+
+
+            setSession(
+              newSession
+            );
+
+
+            setUser(
+              newSession?.user ??
+                null
+            );
+
+
+            /*
+             * Never leave the app
+             * permanently loading.
+             */
+            setLoading(false);
+          }
+        );
 
 
     return () => {
-      subscription.unsubscribe();
+      mounted =
+        false;
+
+
+      authListener
+        .subscription
+        .unsubscribe();
     };
+
   }, []);
 
 
-  const signIn = async (
-    email: string,
-    password: string
-  ) => {
-    const { error } =
-      await supabase.auth
-        .signInWithPassword({
-          email,
-          password,
-        });
+  /*
+   * ---------------------------------------
+   * LOGIN
+   * ---------------------------------------
+   */
+  const signIn =
+    async (
+      email: string,
+      password: string
+    ) => {
+      const {
+        data,
+        error,
+      } =
+        await supabase.auth
+          .signInWithPassword({
+            email,
+            password,
+          });
 
 
-    if (error) {
-      throw error;
-    }
-  };
+      if (error) {
+        throw error;
+      }
 
 
-  const signOut = async () => {
-    const { error } =
-      await supabase.auth.signOut();
+      setSession(
+        data.session
+      );
 
-    if (error) {
-      throw error;
-    }
-  };
+
+      setUser(
+        data.user
+      );
+    };
+
+
+  /*
+   * ---------------------------------------
+   * LOGOUT
+   * ---------------------------------------
+   */
+  const signOut =
+    async () => {
+      const {
+        error,
+      } =
+        await supabase.auth
+          .signOut();
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      setSession(null);
+
+      setUser(null);
+    };
+
+
+  const value:
+    AuthContextValue =
+    {
+      user,
+
+      session,
+
+      loading,
+
+      signIn,
+
+      signOut,
+    };
 
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        session,
-        loading,
-        signIn,
-        signOut,
-      }}
+      value={value}
     >
       {children}
     </AuthContext.Provider>
   );
-};
+}
