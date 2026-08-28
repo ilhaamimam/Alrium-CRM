@@ -1,6 +1,7 @@
 import {
   createContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -27,7 +28,8 @@ export interface AuthContextValue {
     password: string
   ) => Promise<void>;
 
-  signOut: () => Promise<void>;
+  signOut:
+    () => Promise<void>;
 }
 
 
@@ -70,17 +72,17 @@ export default function AuthProvider({
     useState(true);
 
 
+  /*
+   * =========================================
+   * INITIAL AUTH CHECK
+   * =========================================
+   */
   useEffect(() => {
-    let mounted =
+    let active =
       true;
 
 
-    /*
-     * ---------------------------------------
-     * Load current Supabase session
-     * ---------------------------------------
-     */
-    const initialiseAuth =
+    const initialise =
       async () => {
         try {
           const {
@@ -99,7 +101,7 @@ export default function AuthProvider({
           }
 
 
-          if (!mounted) {
+          if (!active) {
             return;
           }
 
@@ -121,44 +123,46 @@ export default function AuthProvider({
           );
 
 
-          if (mounted) {
+          if (active) {
             setSession(null);
 
             setUser(null);
           }
 
         } finally {
-          /*
-           * THIS IS THE IMPORTANT FIX.
-           *
-           * loading must always become false,
-           * even if Supabase returns an error.
-           */
-          if (mounted) {
+          if (active) {
             setLoading(false);
           }
         }
       };
 
 
-    initialiseAuth();
+    void initialise();
 
 
     /*
-     * ---------------------------------------
-     * Listen for login/logout/session changes
-     * ---------------------------------------
+     * Listen for Supabase login/logout.
+     *
+     * Important:
+     * Do not make awaited Supabase auth calls
+     * inside this callback.
      */
     const {
-      data: authListener,
+      data: subscriptionData,
     } =
       supabase.auth
         .onAuthStateChange(
           (
-            _event,
+            event,
             newSession
           ) => {
-            if (!mounted) {
+            console.log(
+              "AUTH EVENT:",
+              event
+            );
+
+
+            if (!active) {
               return;
             }
 
@@ -174,21 +178,17 @@ export default function AuthProvider({
             );
 
 
-            /*
-             * Never leave the app
-             * permanently loading.
-             */
             setLoading(false);
           }
         );
 
 
     return () => {
-      mounted =
+      active =
         false;
 
 
-      authListener
+      subscriptionData
         .subscription
         .unsubscribe();
     };
@@ -197,29 +197,91 @@ export default function AuthProvider({
 
 
   /*
-   * ---------------------------------------
+   * =========================================
    * LOGIN
-   * ---------------------------------------
+   * =========================================
    */
   const signIn =
     async (
       email: string,
       password: string
     ) => {
-      const {
-        data,
-        error,
-      } =
-        await supabase.auth
+      console.log(
+        "Starting Supabase login..."
+      );
+
+
+      /*
+       * Timeout prevents the UI from
+       * remaining on Signing In forever.
+       */
+      const loginPromise =
+        supabase.auth
           .signInWithPassword({
             email,
             password,
           });
 
 
+      const timeoutPromise =
+        new Promise<never>(
+          (
+            _resolve,
+            reject
+          ) => {
+            window.setTimeout(
+              () => {
+                reject(
+                  new Error(
+                    "Login request timed out. Check Supabase URL, key, and internet connection."
+                  )
+                );
+              },
+              15000
+            );
+          }
+        );
+
+
+      const {
+        data,
+        error,
+      } =
+        await Promise.race([
+          loginPromise,
+          timeoutPromise,
+        ]);
+
+
       if (error) {
+        console.error(
+          "SUPABASE LOGIN ERROR:",
+          error
+        );
+
         throw error;
       }
+
+
+      if (
+        !data.user ||
+        !data.session
+      ) {
+        throw new Error(
+          "Supabase did not return a valid session"
+        );
+      }
+
+
+      console.log(
+        "Supabase login successful:",
+        data.user.email
+      );
+
+
+      setUser(
+        data.user
+      );
 
 
       setSession(
@@ -227,16 +289,14 @@ export default function AuthProvider({
       );
 
 
-      setUser(
-        data.user
-      );
+      setLoading(false);
     };
 
 
   /*
-   * ---------------------------------------
+   * =========================================
    * LOGOUT
-   * ---------------------------------------
+   * =========================================
    */
   const signOut =
     async () => {
@@ -248,6 +308,11 @@ export default function AuthProvider({
 
 
       if (error) {
+        console.error(
+          "LOGOUT ERROR:",
+          error
+        );
+
         throw error;
       }
 
@@ -255,22 +320,30 @@ export default function AuthProvider({
       setSession(null);
 
       setUser(null);
+
+      setLoading(false);
     };
 
 
-  const value:
-    AuthContextValue =
-    {
-      user,
+  const value =
+    useMemo<AuthContextValue>(
+      () => ({
+        user,
 
-      session,
+        session,
 
-      loading,
+        loading,
 
-      signIn,
+        signIn,
 
-      signOut,
-    };
+        signOut,
+      }),
+      [
+        user,
+        session,
+        loading,
+      ]
+    );
 
 
   return (

@@ -4,6 +4,7 @@ import {
 } from "react";
 
 import {
+  Navigate,
   useNavigate,
 } from "react-router-dom";
 
@@ -18,74 +19,156 @@ export default function LoginPage() {
   const navigate =
     useNavigate();
 
-  const { signIn } =
+
+  const {
+    user,
+    loading: authLoading,
+    signIn,
+  } =
     useAuth();
+
 
   const [
     email,
     setEmail,
-  ] = useState("");
+  ] =
+    useState("");
+
 
   const [
     password,
     setPassword,
-  ] = useState("");
+  ] =
+    useState("");
+
 
   const [
     error,
     setError,
-  ] = useState("");
+  ] =
+    useState("");
+
 
   const [
-    loading,
-    setLoading,
-  ] = useState(false);
+    loginLoading,
+    setLoginLoading,
+  ] =
+    useState(false);
+
+
+  /*
+   * If user already has a session,
+   * don't show login again.
+   */
+  if (
+    !authLoading &&
+    user
+  ) {
+    return (
+      <Navigate
+        to="/"
+        replace
+      />
+    );
+  }
 
 
   const handleSubmit =
     async (
-      event: FormEvent<HTMLFormElement>
+      event:
+        FormEvent<HTMLFormElement>
     ) => {
       event.preventDefault();
 
+
+      if (loginLoading) {
+        return;
+      }
+
+
       setError("");
 
-      if (!email.trim()) {
+
+      const cleanEmail =
+        email.trim();
+
+
+      if (!cleanEmail) {
         setError(
           "Email is required"
         );
+
         return;
       }
 
-      if (!password.trim()) {
+
+      if (!password) {
         setError(
           "Password is required"
         );
+
         return;
       }
 
+
       try {
-        setLoading(true);
+        setLoginLoading(
+          true
+        );
+
+
+        console.log(
+          "Login submitted:",
+          cleanEmail
+        );
+
 
         await signIn(
-          email.trim(),
+          cleanEmail,
           password
         );
 
-        navigate("/", {
-          replace: true,
-        });
-      } catch (err) {
-        console.error(
-          "LOGIN ERROR:",
-          err
+
+        console.log(
+          "Login finished. Navigating to dashboard..."
         );
 
-        setError(
-          "Invalid email or password"
+
+        navigate(
+          "/",
+          {
+            replace: true,
+          }
         );
+
+      } catch (error) {
+        console.error(
+          "LOGIN PAGE ERROR:",
+          error
+        );
+
+
+        if (
+          error instanceof Error
+        ) {
+          setError(
+            error.message
+          );
+
+        } else {
+          setError(
+            "Unable to sign in"
+          );
+        }
+
       } finally {
-        setLoading(false);
+        /*
+         * This guarantees the button
+         * never stays stuck indefinitely.
+         */
+        setLoginLoading(
+          false
+        );
       }
     };
 
@@ -94,57 +177,87 @@ export default function LoginPage() {
     <div className="login-screen">
 
       <div className="login-background-shape login-shape-1" />
+
       <div className="login-background-shape login-shape-2" />
+
       <div className="login-background-shape login-shape-3" />
+
 
       <div className="login-card-modern">
 
         <div className="login-brand-top">
+
           <div className="login-brand-badge">
             A
           </div>
 
+
           <div className="login-brand-text">
-            <h1>Altrium CRM</h1>
+
+            <h1>
+              Altrium CRM
+            </h1>
+
             <p>
               Sign in to continue
             </p>
+
           </div>
+
         </div>
+
 
         <div className="login-center-icon">
+
           <div className="login-center-icon-inner">
-            <span>👤</span>
+            <span>
+              👤
+            </span>
           </div>
+
         </div>
 
+
         <div className="login-title-block">
+
           <h2>
-            Hello Mate
+            Customer Login
           </h2>
 
           <p>
             Access your CRM workspace
           </p>
+
         </div>
+
 
         <form
           className="login-form-modern"
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
         >
+
           <div className="login-input-group">
-            <label htmlFor="email">
+
+            <label
+              htmlFor="email"
+            >
               Email
             </label>
 
+
             <div className="login-input-wrap">
+
               <span className="login-input-icon">
                 ✉
               </span>
 
+
               <input
                 id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(event) =>
@@ -152,23 +265,36 @@ export default function LoginPage() {
                     event.target.value
                   )
                 }
+                disabled={
+                  loginLoading
+                }
               />
+
             </div>
+
           </div>
 
+
           <div className="login-input-group">
-            <label htmlFor="password">
+
+            <label
+              htmlFor="password"
+            >
               Password
             </label>
 
+
             <div className="login-input-wrap">
+
               <span className="login-input-icon">
                 🔒
               </span>
 
+
               <input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(event) =>
@@ -176,19 +302,30 @@ export default function LoginPage() {
                     event.target.value
                   )
                 }
+                disabled={
+                  loginLoading
+                }
               />
+
             </div>
+
           </div>
 
+
           <div className="login-row">
+
             <label className="remember-wrap">
+
               <input
                 type="checkbox"
               />
+
               <span>
                 Remember me
               </span>
+
             </label>
+
 
             <button
               type="button"
@@ -196,7 +333,9 @@ export default function LoginPage() {
             >
               Forgot Password?
             </button>
+
           </div>
+
 
           {error && (
             <div className="login-error-box">
@@ -204,15 +343,21 @@ export default function LoginPage() {
             </div>
           )}
 
+
           <button
             type="submit"
             className="login-submit-btn"
-            disabled={loading}
+            disabled={
+              loginLoading
+            }
           >
-            {loading
+
+            {loginLoading
               ? "Signing In..."
               : "Login"}
+
           </button>
+
         </form>
 
       </div>

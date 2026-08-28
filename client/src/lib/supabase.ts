@@ -4,13 +4,11 @@ import {
 
 
 const supabaseUrl =
-  import.meta.env
-    .VITE_SUPABASE_URL;
+  import.meta.env.VITE_SUPABASE_URL;
 
 
 const supabasePublishableKey =
-  import.meta.env
-    .VITE_SUPABASE_PUBLISHABLE_KEY;
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 
 if (!supabaseUrl) {
@@ -27,6 +25,19 @@ if (!supabasePublishableKey) {
 }
 
 
+console.log(
+  "SUPABASE URL:",
+  supabaseUrl
+);
+
+console.log(
+  "SUPABASE KEY LOADED:",
+  Boolean(
+    supabasePublishableKey
+  )
+);
+
+
 export const supabase =
   createClient(
     supabaseUrl,
@@ -34,9 +45,7 @@ export const supabase =
     {
       auth: {
         persistSession: true,
-
         autoRefreshToken: true,
-
         detectSessionInUrl: true,
       },
     }
