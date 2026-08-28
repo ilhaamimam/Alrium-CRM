@@ -22,6 +22,9 @@ import TaskForm
 import TaskTable
   from "./TaskTable";
 
+import TeamCompletionSubmitForm
+  from "../project-completion/TeamCompletionSubmitForm";
+
 import type {
   TeamProgressProjectDetails,
 } from "./teamProgress.types";
@@ -150,7 +153,9 @@ export default function TeamProjectDetailsPage() {
         </p>
 
 
-        <Link to="/team-progress">
+        <Link
+          to="/team-progress"
+        >
           ← Back to Team Progress
         </Link>
 
@@ -170,6 +175,14 @@ export default function TeamProjectDetailsPage() {
       </div>
     );
   }
+
+
+  const incompleteTaskCount =
+    project.tasks.filter(
+      (task) =>
+        task.status !==
+        "done"
+    ).length;
 
 
   return (
@@ -279,26 +292,6 @@ export default function TeamProjectDetailsPage() {
             }
           />
 
-
-          <Detail
-            label="Lead"
-            value={
-              project.leads
-                ?.title
-            }
-          />
-
-
-          <Detail
-            label="Contact"
-            value={
-              project.leads
-                ?.contacts
-                ? `${project.leads.contacts.first_name} ${project.leads.contacts.last_name || ""}`
-                : "-"
-            }
-          />
-
         </div>
 
       </div>
@@ -345,22 +338,9 @@ export default function TeamProjectDetailsPage() {
 
       <div className="card section">
 
-        <div className="section-header">
-
-          <div>
-
-            <h2 className="card-title">
-              Project Tasks
-            </h2>
-
-            <p className="page-subtitle">
-              Update task progress and
-              mark completed work Done.
-            </p>
-
-          </div>
-
-        </div>
+        <h2 className="card-title">
+          Project Tasks
+        </h2>
 
 
         <TaskTable
@@ -369,6 +349,25 @@ export default function TeamProjectDetailsPage() {
           }
 
           onChanged={
+            loadProject
+          }
+        />
+
+      </div>
+
+
+      <div className="card section">
+
+        <TeamCompletionSubmitForm
+          projectId={
+            project.id
+          }
+
+          incompleteTaskCount={
+            incompleteTaskCount
+          }
+
+          onSubmitted={
             loadProject
           }
         />

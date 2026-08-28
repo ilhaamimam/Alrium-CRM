@@ -235,6 +235,49 @@ export default function DashboardPage() {
   </Link>
 )}
 
+{profile.role ===
+  "senior_manager" && (
+
+  <Link
+    className="dashboard-link-card"
+    to="/project-completion"
+  >
+
+    <span className="dashboard-link-title">
+      Project Completion Review
+    </span>
+
+    <span className="dashboard-link-description">
+      Review projects submitted as
+      completed and confirm their final
+      Done status.
+    </span>
+
+  </Link>
+)}
+{(
+  profile.role ===
+    "sales_rep" ||
+  profile.role ===
+    "sales_manager"
+) && (
+
+  <Link
+    className="dashboard-link-card"
+    to="/final-updates"
+  >
+
+    <span className="dashboard-link-title">
+      Final Project Updates
+    </span>
+
+    <span className="dashboard-link-description">
+      View completed projects confirmed
+      by the Senior Manager.
+    </span>
+
+  </Link>
+)}
           </div>
 
 

@@ -25,6 +25,16 @@ import ApprovedLeadBoardDetailsPage
 import LeadDetailsPage from "./features/leads/LeadDetailsPage";
 import ContactDetailsPage from "./features/contacts/ContactDetailsPage";
 import ProtectedRoute from "./pages/routes/ProtectedRoute";
+import ProjectCompletionReviewPage
+  from "./features/project-completion/ProjectCompletionReviewPage";
+
+import ProjectCompletionReviewDetailsPage
+  from "./features/project-completion/ProjectCompletionReviewDetailsPage";
+
+import FinalProjectUpdatesPage
+  from "./features/project-completion/FinalProjectUpdatesPage";
+
+
 
 function App() {
   return (
@@ -44,6 +54,37 @@ function App() {
     </ProtectedRoute>
   }
 />
+
+<Route
+  path="/project-completion"
+  element={
+    <ProtectedRoute>
+      <ProjectCompletionReviewPage />
+    </ProtectedRoute>
+  }
+/>
+
+
+<Route
+  path="/project-completion/:id"
+  element={
+    <ProtectedRoute>
+      <ProjectCompletionReviewDetailsPage />
+    </ProtectedRoute>
+  }
+/>
+
+
+<Route
+  path="/final-updates"
+  element={
+    <ProtectedRoute>
+      <FinalProjectUpdatesPage />
+    </ProtectedRoute>
+  }
+/>
+
+
 
 <Route
   path="/team-progress"

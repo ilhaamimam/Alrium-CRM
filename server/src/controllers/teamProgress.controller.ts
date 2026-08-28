@@ -20,7 +20,6 @@ const allowedProjectStatuses:
   "assigned",
   "ongoing",
   "on_hold",
-  "done",
 ];
 
 
