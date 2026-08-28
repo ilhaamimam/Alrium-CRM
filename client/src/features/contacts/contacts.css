@@ -1,21 +1,53 @@
-.contacts-layout {
+.companies-layout {
   display: grid;
 
   grid-template-columns:
-    minmax(320px, 400px)
-    minmax(0, 1fr);
+    minmax(
+      310px,
+      380px
+    )
+    minmax(
+      0,
+      1fr
+    );
 
-  gap: 24px;
+  gap: 22px;
 
   align-items: start;
 }
 
-.contact-name {
-  font-weight: 700;
+
+.company-name-link {
+  color:
+    #111111;
+
+  font-weight: 800;
 }
 
-@media (max-width: 900px) {
-  .contacts-layout {
-    grid-template-columns: 1fr;
+
+.company-name-link:hover {
+  color:
+    var(--orange);
+}
+
+
+.company-details-actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 9px;
+
+  margin-bottom: 20px;
+}
+
+
+@media (
+  max-width: 1050px
+) {
+
+  .companies-layout {
+    grid-template-columns:
+      1fr;
   }
 }
