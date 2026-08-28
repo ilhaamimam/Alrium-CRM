@@ -11,7 +11,12 @@ import teamAllocationRoutes
 import teamProgressRoutes
   from "./routes/teamProgress.routes";
   import companyRoutes from "./routes/company.routes";
-import approvedLeadBoardRoutes
+
+import projectCompletionRoutes
+  from "./routes/projectCompletion.routes";
+
+
+  import approvedLeadBoardRoutes
   from "./routes/approvedLeadBoard.routes";
 import leadRoutes from "./routes/lead.routes";
 const app = express();
@@ -30,6 +35,10 @@ app.use(
   teamProgressRoutes
 );
 
+app.use(
+  "/api",
+  projectCompletionRoutes
+);
 
 app.use(
   "/api",

@@ -1,0 +1,640 @@
+/*
+ * =============================================
+ * PROJECT COMPLETION
+ * =============================================
+ */
+
+
+/*
+ * REVIEW GRID
+ */
+
+.completion-review-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(
+        320px,
+        1fr
+      )
+    );
+
+  gap: 20px;
+}
+
+
+/*
+ * FILTER
+ */
+
+.completion-filter {
+  display: flex;
+
+  align-items: end;
+
+  gap: 16px;
+}
+
+.completion-filter
+.form-group {
+  width:
+    min(
+      320px,
+      100%
+    );
+}
+
+
+/*
+ * REVIEW CARD
+ */
+
+.completion-review-card {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+.completion-review-header {
+  display: flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap: 16px;
+}
+
+.completion-review-header h2 {
+  margin: 0;
+
+  font-size:
+    1.15rem;
+}
+
+.completion-review-header p {
+  margin:
+    6px 0 0;
+
+  color:
+    var(--text-soft);
+}
+
+
+/*
+ * REVIEW STATUS BADGES
+ */
+
+.completion-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding:
+    5px 10px;
+
+  border-radius:
+    999px;
+
+  font-size:
+    0.75rem;
+
+  font-weight:
+    700;
+
+  text-transform:
+    capitalize;
+
+  white-space:
+    nowrap;
+}
+
+
+.completion-pending_review {
+  color:
+    var(--warning);
+
+  background:
+    rgba(
+      232,
+      180,
+      92,
+      0.09
+    );
+
+  border:
+    1px solid
+    rgba(
+      232,
+      180,
+      92,
+      0.26
+    );
+}
+
+
+.completion-changes_requested {
+  color:
+    var(--danger);
+
+  background:
+    rgba(
+      239,
+      107,
+      115,
+      0.09
+    );
+
+  border:
+    1px solid
+    rgba(
+      239,
+      107,
+      115,
+      0.25
+    );
+}
+
+
+.completion-confirmed {
+  color:
+    var(--success);
+
+  background:
+    rgba(
+      73,
+      199,
+      142,
+      0.09
+    );
+
+  border:
+    1px solid
+    rgba(
+      73,
+      199,
+      142,
+      0.26
+    );
+}
+
+
+/*
+ * CARD METADATA
+ */
+
+.completion-card-meta {
+  display: grid;
+
+  gap: 8px;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    0.86rem;
+}
+
+
+/*
+ * TEAM COMPLETION MESSAGES
+ */
+
+.completion-message {
+  padding:
+    16px;
+
+  border-radius:
+    var(--radius-md);
+
+  line-height:
+    1.5;
+}
+
+.completion-message strong {
+  display: block;
+
+  margin-bottom:
+    5px;
+}
+
+.completion-message p {
+  margin:
+    4px 0 0;
+}
+
+
+.completion-pending {
+  color:
+    var(--warning);
+
+  background:
+    rgba(
+      232,
+      180,
+      92,
+      0.08
+    );
+
+  border:
+    1px solid
+    rgba(
+      232,
+      180,
+      92,
+      0.25
+    );
+}
+
+
+.completion-changes {
+  color:
+    var(--danger);
+
+  background:
+    rgba(
+      239,
+      107,
+      115,
+      0.08
+    );
+
+  border:
+    1px solid
+    rgba(
+      239,
+      107,
+      115,
+      0.25
+    );
+}
+
+
+.completion-confirmed {
+  color:
+    var(--success);
+
+  background:
+    rgba(
+      73,
+      199,
+      142,
+      0.08
+    );
+
+  border:
+    1px solid
+    rgba(
+      73,
+      199,
+      142,
+      0.25
+    );
+}
+
+
+/*
+ * COMPLETION CHECK
+ */
+
+.completion-check {
+  display: flex;
+
+  align-items: center;
+
+  justify-content:
+    space-between;
+
+  gap: 16px;
+
+  padding:
+    13px 15px;
+
+  background:
+    var(--surface-2);
+
+  border:
+    1px solid
+    var(--border-soft);
+
+  border-radius:
+    var(--radius-sm);
+
+  color:
+    var(--text-soft);
+}
+
+.completion-check strong {
+  color:
+    var(--text);
+
+  font-size:
+    1.1rem;
+}
+
+
+/*
+ * STATUS HELP
+ */
+
+.project-status-help {
+  margin: 0;
+
+  padding:
+    12px;
+
+  color:
+    var(--text-muted);
+
+  background:
+    var(--surface-2);
+
+  border-radius:
+    var(--radius-sm);
+
+  font-size:
+    0.85rem;
+
+  line-height:
+    1.55;
+}
+
+
+/*
+ * REVIEW NOTES
+ */
+
+.completion-notes {
+  margin: 0;
+
+  color:
+    var(--text-soft);
+
+  line-height:
+    1.7;
+
+  white-space:
+    pre-wrap;
+}
+
+
+/*
+ * REVIEW ACTIONS
+ */
+
+.completion-review-actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+
+/*
+ * =============================================
+ * FINAL SALES / MARKETING UPDATES
+ * =============================================
+ */
+
+.final-update-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(
+        340px,
+        1fr
+      )
+    );
+
+  gap: 20px;
+}
+
+
+.final-update-card {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 22px;
+}
+
+
+.final-update-header {
+  display: flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap: 16px;
+}
+
+
+.final-update-header h2 {
+  margin:
+    5px 0;
+
+  font-size:
+    1.2rem;
+}
+
+
+.final-update-header p {
+  margin: 0;
+
+  color:
+    var(--text-soft);
+}
+
+
+.final-update-label {
+  color:
+    var(--success);
+
+  font-size:
+    0.73rem;
+
+  font-weight:
+    800;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.08em;
+}
+
+
+/*
+ * FINAL UPDATE DETAILS
+ */
+
+.final-update-details {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap: 12px;
+}
+
+
+.final-update-details div {
+  padding:
+    13px;
+
+  background:
+    var(--surface-2);
+
+  border:
+    1px solid
+    var(--border-soft);
+
+  border-radius:
+    var(--radius-sm);
+}
+
+
+.final-update-details span {
+  display: block;
+
+  margin-bottom:
+    4px;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    0.75rem;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.05em;
+}
+
+
+.final-update-details strong {
+  font-size:
+    0.92rem;
+}
+
+
+/*
+ * FINAL UPDATE NOTES
+ */
+
+.final-update-notes {
+  padding-top:
+    4px;
+}
+
+
+.final-update-notes h3 {
+  margin:
+    16px 0 6px;
+
+  font-size:
+    0.9rem;
+}
+
+
+.final-update-notes p {
+  margin: 0;
+
+  color:
+    var(--text-soft);
+
+  line-height:
+    1.65;
+
+  white-space:
+    pre-wrap;
+}
+
+
+.final-update-footer {
+  margin-top: auto;
+
+  padding-top:
+    16px;
+
+  border-top:
+    1px solid
+    var(--border-soft);
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    0.78rem;
+}
+
+
+/*
+ * RESPONSIVE
+ */
+
+@media (
+  max-width: 700px
+) {
+
+  .completion-filter {
+    flex-direction:
+      column;
+
+    align-items:
+      stretch;
+  }
+
+
+  .completion-filter
+  .form-group {
+    width: 100%;
+  }
+
+
+  .completion-review-header,
+  .final-update-header {
+    flex-direction:
+      column;
+  }
+
+
+  .final-update-details {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .completion-review-actions {
+    flex-direction:
+      column;
+  }
+
+
+  .completion-review-actions
+  button {
+    width: 100%;
+  }
+}

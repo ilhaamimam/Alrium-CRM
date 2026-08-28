@@ -24,29 +24,36 @@ interface Props {
 }
 
 
+type EditableStatus =
+  | "assigned"
+  | "ongoing"
+  | "on_hold";
+
+
 export default function ProjectStatusForm({
   project,
   onUpdated,
 }: Props) {
+
+  const initialStatus:
+    EditableStatus =
+    project.status ===
+      "on_hold"
+      ? "on_hold"
+      : project.status ===
+          "assigned"
+        ? "assigned"
+        : "ongoing";
+
 
   const [
     status,
     setStatus,
   ] =
     useState<
-      ProjectProgressStatus
+      EditableStatus
     >(
-      project.status
-    );
-
-
-  const [
-    completionNotes,
-    setCompletionNotes,
-  ] =
-    useState(
-      project.completion_notes ??
-      ""
+      initialStatus
     );
 
 
@@ -81,8 +88,8 @@ export default function ProjectStatusForm({
 
         await updateProjectProgressStatus(
           project.id,
-          status,
-          completionNotes
+          status as
+            ProjectProgressStatus
         );
 
 
@@ -124,6 +131,27 @@ export default function ProjectStatusForm({
     };
 
 
+  if (
+    project.status ===
+    "done"
+  ) {
+
+    return (
+      <div>
+
+        <h2 className="card-title">
+          Project Stage
+        </h2>
+
+        <div className="completion-message completion-confirmed">
+          Project is confirmed Done.
+        </div>
+
+      </div>
+    );
+  }
+
+
   return (
     <form
       className="form-grid"
@@ -141,10 +169,10 @@ export default function ProjectStatusForm({
       </div>
 
 
-      <div className="form-group">
+      <div className="form-group form-group-full">
 
         <label>
-          Project Status
+          Working Status
         </label>
 
         <select
@@ -153,7 +181,7 @@ export default function ProjectStatusForm({
             setStatus(
               event.target
                 .value as
-                ProjectProgressStatus
+                EditableStatus
             )
           }
         >
@@ -170,34 +198,18 @@ export default function ProjectStatusForm({
             On Hold
           </option>
 
-          <option value="done">
-            Done
-          </option>
-
         </select>
 
       </div>
 
 
-      <div className="form-group form-group-full">
-
-        <label>
-          Completion Notes
-        </label>
-
-        <textarea
-          value={
-            completionNotes
-          }
-          onChange={(event) =>
-            setCompletionNotes(
-              event.target.value
-            )
-          }
-          placeholder="Add completion notes when the project is finished..."
-        />
-
-      </div>
+      <p className="project-status-help form-group-full">
+        To finish the overall project,
+        use the Project Completion section.
+        Senior Manager confirmation is
+        required before the Lead Board
+        becomes Done.
+      </p>
 
 
       {error && (
@@ -215,9 +227,11 @@ export default function ProjectStatusForm({
             loading
           }
         >
+
           {loading
             ? "Updating..."
             : "Update Project Status"}
+
         </button>
 
       </div>
