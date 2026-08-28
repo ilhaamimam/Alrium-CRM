@@ -5,23 +5,13 @@ import {
 import react
   from "@vitejs/plugin-react";
 
-
 export default defineConfig({
   plugins: [
     react(),
   ],
 
-  /*
-   * IMPORTANT:
-   *
-   * Replace CRM with your actual
-   * GitHub repository name.
-   *
-   * Example repository:
-   * github.com/ilhaam/CRM
-   *
-   * then:
-   * base: "/CRM/"
-   */
-  base: "/Alrium-CRM/",
+  // Netlify serves the site from the domain root,
+  // so base must be "/" (the default). Only set a
+  // subpath base if deploying under e.g. GitHub Pages.
+  base: "/",
 });
