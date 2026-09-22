@@ -22,41 +22,53 @@ export interface CreateTaskInput {
 
   title: string;
 
-  description?: string | null;
+  description?:
+    string | null;
 
-  assignedTo?: string | null;
+  assignedTo?:
+    string | null;
 
-  dueDate?: string | null;
+  dueDate?:
+    string | null;
 
   createdBy: string;
 }
 
 
 /*
- * ========================================================
- * FIND PROJECTS THE CURRENT USER CAN ACCESS
+ * =========================================================
+ * ACCESSIBLE PROJECT IDS
  *
- * Team Member:
- * only projects allocated to one of their teams.
+ * team_member:
+ * projects allocated to one of their teams
  *
- * Senior Manager:
- * all team-allocated projects.
- * ========================================================
+ * sales_manager:
+ * all allocated projects
+ *
+ * senior_manager:
+ * all allocated projects
+ * =========================================================
  */
 
 const getAccessibleProjectIds =
   async (
     userId: string,
+
     role: string
-  ): Promise<string[]> => {
+  ):
+    Promise<string[]> => {
 
     /*
-     * Senior Manager can view
-     * every team-assigned project.
+     * Management sees all team allocations.
      */
+
     if (
-      role === "senior_manager"
+      role ===
+        "senior_manager" ||
+      role ===
+        "sales_manager"
     ) {
+
       const {
         data,
         error,
@@ -68,17 +80,25 @@ const getAccessibleProjectIds =
           );
 
 
-      if (error) {
+      if (
+        error
+      ) {
+
         throw new Error(
-          `Unable to load project access: ${error.message}`
+          `Unable to load management project access: ${error.message}`
         );
       }
 
 
       return [
         ...new Set(
-          (data ?? []).map(
-            (row) =>
+          (
+            data ??
+            []
+          ).map(
+            (
+              row
+            ) =>
               row.project_id
           )
         ),
@@ -87,25 +107,32 @@ const getAccessibleProjectIds =
 
 
     /*
-     * Team Member:
-     * first find their teams.
+     * Team member:
+     * find their team memberships.
      */
+
     const {
-      data: memberships,
-      error: membershipError,
+      data:
+        memberships,
+
+      error:
+        membershipError,
     } =
       await supabaseAdmin
         .from("team_members")
-        .select(
-          "team_id"
-        )
+        .select(`
+          team_id
+        `)
         .eq(
           "user_id",
           userId
         );
 
 
-    if (membershipError) {
+    if (
+      membershipError
+    ) {
+
       throw new Error(
         `Unable to load team memberships: ${membershipError.message}`
       );
@@ -115,41 +142,54 @@ const getAccessibleProjectIds =
     const teamIds =
       [
         ...new Set(
-          (memberships ?? []).map(
-            (row) =>
-              row.team_id
+          (
+            memberships ??
+            []
+          ).map(
+            (
+              membership
+            ) =>
+              membership.team_id
           )
         ),
       ];
 
 
     if (
-      teamIds.length === 0
+      teamIds.length ===
+      0
     ) {
+
       return [];
     }
 
 
     /*
-     * Find projects allocated
-     * to those teams.
+     * Find projects allocated to those teams.
      */
+
     const {
-      data: allocations,
-      error: allocationError,
+      data:
+        allocations,
+
+      error:
+        allocationError,
     } =
       await supabaseAdmin
         .from("project_teams")
-        .select(
-          "project_id"
-        )
+        .select(`
+          project_id
+        `)
         .in(
           "team_id",
           teamIds
         );
 
 
-    if (allocationError) {
+    if (
+      allocationError
+    ) {
+
       throw new Error(
         `Unable to load project allocations: ${allocationError.message}`
       );
@@ -158,9 +198,15 @@ const getAccessibleProjectIds =
 
     return [
       ...new Set(
-        (allocations ?? []).map(
-          (row) =>
-            row.project_id
+        (
+          allocations ??
+          []
+        ).map(
+          (
+            allocation
+          ) =>
+            allocation
+              .project_id
         )
       ),
     ];
@@ -168,14 +214,15 @@ const getAccessibleProjectIds =
 
 
 /*
- * ========================================================
- * GET PROJECTS ASSIGNED TO CURRENT TEAM MEMBER
- * ========================================================
+ * =========================================================
+ * LIST TEAM PROGRESS PROJECTS
+ * =========================================================
  */
 
 export const getTeamProgressProjects =
   async (
     userId: string,
+
     role: string
   ) => {
 
@@ -187,15 +234,20 @@ export const getTeamProgressProjects =
 
 
     if (
-      projectIds.length === 0
+      projectIds.length ===
+      0
     ) {
+
       return [];
     }
 
 
     const {
-      data: projects,
-      error: projectError,
+      data:
+        projects,
+
+      error:
+        projectError,
     } =
       await supabaseAdmin
         .from("projects")
@@ -205,11 +257,15 @@ export const getTeamProgressProjects =
           name,
           description,
           status,
+          completion_review_status,
           planned_start_date,
           planned_end_date,
           actual_start_date,
           actual_end_date,
           completion_notes,
+          team_completed_at,
+          team_completed_by,
+          senior_review_notes,
           created_at,
           updated_at,
 
@@ -218,6 +274,7 @@ export const getTeamProgressProjects =
             title,
             temperature,
             workflow_stage,
+            estimated_budget,
 
             companies (
               id,
@@ -228,7 +285,8 @@ export const getTeamProgressProjects =
               id,
               first_name,
               last_name,
-              email
+              email,
+              phone
             )
           )
         `)
@@ -236,19 +294,28 @@ export const getTeamProgressProjects =
           "id",
           projectIds
         )
+        .neq(
+          "status",
+          "done"
+        )
         .order(
           "updated_at",
           {
-            ascending: false,
+            ascending:
+              false,
           }
         );
 
 
-    if (projectError) {
+    if (
+      projectError
+    ) {
+
       console.error(
         "GET TEAM PROGRESS PROJECTS ERROR:",
         projectError
       );
+
 
       throw new Error(
         `Unable to load assigned projects: ${projectError.message}`
@@ -257,11 +324,15 @@ export const getTeamProgressProjects =
 
 
     /*
-     * Get allocated teams.
+     * Allocated teams.
      */
+
     const {
-      data: allocations,
-      error: allocationError,
+      data:
+        allocations,
+
+      error:
+        allocationError,
     } =
       await supabaseAdmin
         .from("project_teams")
@@ -272,7 +343,8 @@ export const getTeamProgressProjects =
 
           teams (
             id,
-            name
+            name,
+            description
           )
         `)
         .in(
@@ -281,7 +353,10 @@ export const getTeamProgressProjects =
         );
 
 
-    if (allocationError) {
+    if (
+      allocationError
+    ) {
+
       throw new Error(
         `Unable to load allocated teams: ${allocationError.message}`
       );
@@ -289,12 +364,15 @@ export const getTeamProgressProjects =
 
 
     /*
-     * Get tasks so we can show
-     * task completion summaries.
+     * Tasks.
      */
+
     const {
-      data: tasks,
-      error: taskError,
+      data:
+        tasks,
+
+      error:
+        taskError,
     } =
       await supabaseAdmin
         .from("tasks")
@@ -308,7 +386,10 @@ export const getTeamProgressProjects =
         );
 
 
-    if (taskError) {
+    if (
+      taskError
+    ) {
+
       throw new Error(
         `Unable to load task progress: ${taskError.message}`
       );
@@ -316,22 +397,36 @@ export const getTeamProgressProjects =
 
 
     return (
-      projects ?? []
+      projects ??
+      []
     ).map(
-      (project) => {
+      (
+        project
+      ) => {
 
         const projectTasks =
-          (tasks ?? []).filter(
-            (task) =>
+          (
+            tasks ??
+            []
+          ).filter(
+            (
+              task
+            ) =>
               task.project_id ===
               project.id
           );
 
 
         const allocatedTeams =
-          (allocations ?? []).filter(
-            (allocation) =>
-              allocation.project_id ===
+          (
+            allocations ??
+            []
+          ).filter(
+            (
+              allocation
+            ) =>
+              allocation
+                .project_id ===
               project.id
           );
 
@@ -348,28 +443,36 @@ export const getTeamProgressProjects =
 
             pending:
               projectTasks.filter(
-                (task) =>
+                (
+                  task
+                ) =>
                   task.status ===
                   "pending"
               ).length,
 
             ongoing:
               projectTasks.filter(
-                (task) =>
+                (
+                  task
+                ) =>
                   task.status ===
                   "ongoing"
               ).length,
 
             on_hold:
               projectTasks.filter(
-                (task) =>
+                (
+                  task
+                ) =>
                   task.status ===
                   "on_hold"
               ).length,
 
             done:
               projectTasks.filter(
-                (task) =>
+                (
+                  task
+                ) =>
                   task.status ===
                   "done"
               ).length,
@@ -381,15 +484,17 @@ export const getTeamProgressProjects =
 
 
 /*
- * ========================================================
- * GET ONE ASSIGNED PROJECT
- * ========================================================
+ * =========================================================
+ * GET ONE PROJECT
+ * =========================================================
  */
 
 export const getTeamProgressProjectById =
   async (
     projectId: string,
+
     userId: string,
+
     role: string
   ) => {
 
@@ -401,10 +506,12 @@ export const getTeamProgressProjectById =
 
 
     if (
-      !accessibleProjectIds.includes(
-        projectId
-      )
+      !accessibleProjectIds
+        .includes(
+          projectId
+        )
     ) {
+
       throw new Error(
         "You do not have access to this project"
       );
@@ -412,8 +519,11 @@ export const getTeamProgressProjectById =
 
 
     const {
-      data: project,
-      error: projectError,
+      data:
+        project,
+
+      error:
+        projectError,
     } =
       await supabaseAdmin
         .from("projects")
@@ -423,11 +533,15 @@ export const getTeamProgressProjectById =
           name,
           description,
           status,
+          completion_review_status,
           planned_start_date,
           planned_end_date,
           actual_start_date,
           actual_end_date,
           completion_notes,
+          team_completed_at,
+          team_completed_by,
+          senior_review_notes,
           created_at,
           updated_at,
 
@@ -436,6 +550,7 @@ export const getTeamProgressProjectById =
             title,
             temperature,
             workflow_stage,
+            estimated_budget,
 
             companies (
               id,
@@ -462,6 +577,7 @@ export const getTeamProgressProjectById =
       projectError ||
       !project
     ) {
+
       throw new Error(
         "Project not found"
       );
@@ -469,11 +585,15 @@ export const getTeamProgressProjectById =
 
 
     /*
-     * Allocated teams.
+     * Team allocation.
      */
+
     const {
-      data: allocations,
-      error: allocationError,
+      data:
+        allocations,
+
+      error:
+        allocationError,
     } =
       await supabaseAdmin
         .from("project_teams")
@@ -494,7 +614,10 @@ export const getTeamProgressProjectById =
         );
 
 
-    if (allocationError) {
+    if (
+      allocationError
+    ) {
+
       throw new Error(
         `Unable to load allocated team: ${allocationError.message}`
       );
@@ -502,32 +625,47 @@ export const getTeamProgressProjectById =
 
 
     const teamIds =
-      (allocations ?? []).map(
-        (allocation) =>
+      (
+        allocations ??
+        []
+      ).map(
+        (
+          allocation
+        ) =>
           allocation.team_id
       );
 
 
     /*
-     * Team members available
-     * for task assignment.
+     * Members from allocated teams.
      */
+
     let availableMembers:
       Array<{
         id: string;
-        full_name: string | null;
+
+        full_name:
+          string | null;
+
         email: string;
-        role_in_team: string | null;
+
+        role_in_team:
+          string | null;
       }> =
       [];
 
 
     if (
-      teamIds.length > 0
+      teamIds.length >
+      0
     ) {
+
       const {
-        data: memberships,
-        error: memberError,
+        data:
+          memberships,
+
+        error:
+          membershipError,
       } =
         await supabaseAdmin
           .from("team_members")
@@ -542,30 +680,43 @@ export const getTeamProgressProjectById =
           );
 
 
-      if (memberError) {
+      if (
+        membershipError
+      ) {
+
         throw new Error(
-          `Unable to load team members: ${memberError.message}`
+          `Unable to load team members: ${membershipError.message}`
         );
       }
 
 
-      const userIds =
+      const memberIds =
         [
           ...new Set(
-            (memberships ?? []).map(
-              (member) =>
-                member.user_id
+            (
+              memberships ??
+              []
+            ).map(
+              (
+                membership
+              ) =>
+                membership.user_id
             )
           ),
         ];
 
 
       if (
-        userIds.length > 0
+        memberIds.length >
+        0
       ) {
+
         const {
-          data: profiles,
-          error: profileError,
+          data:
+            profiles,
+
+          error:
+            profilesError,
         } =
           await supabaseAdmin
             .from("profiles")
@@ -576,32 +727,48 @@ export const getTeamProgressProjectById =
             `)
             .in(
               "id",
-              userIds
+              memberIds
             );
 
 
-        if (profileError) {
+        if (
+          profilesError
+        ) {
+
           throw new Error(
-            `Unable to load member profiles: ${profileError.message}`
+            `Unable to load team profiles: ${profilesError.message}`
           );
         }
 
 
         availableMembers =
-          (memberships ?? [])
+          (
+            memberships ??
+            []
+          )
             .map(
-              (membership) => {
+              (
+                membership
+              ) => {
 
                 const profile =
-                  (profiles ?? [])
-                    .find(
-                      (item) =>
-                        item.id ===
-                        membership.user_id
-                    );
+                  (
+                    profiles ??
+                    []
+                  ).find(
+                    (
+                      item
+                    ) =>
+                      item.id ===
+                      membership
+                        .user_id
+                  );
 
 
-                if (!profile) {
+                if (
+                  !profile
+                ) {
+
                   return null;
                 }
 
@@ -611,13 +778,15 @@ export const getTeamProgressProjectById =
                     profile.id,
 
                   full_name:
-                    profile.full_name,
+                    profile
+                      .full_name,
 
                   email:
                     profile.email,
 
                   role_in_team:
-                    membership.role_in_team,
+                    membership
+                      .role_in_team,
                 };
               }
             )
@@ -626,11 +795,17 @@ export const getTeamProgressProjectById =
                 member
               ): member is {
                 id: string;
-                full_name: string | null;
+
+                full_name:
+                  string | null;
+
                 email: string;
-                role_in_team: string | null;
+
+                role_in_team:
+                  string | null;
               } =>
-                member !== null
+                member !==
+                null
             );
       }
     }
@@ -639,9 +814,13 @@ export const getTeamProgressProjectById =
     /*
      * Tasks.
      */
+
     const {
-      data: tasks,
-      error: taskError,
+      data:
+        tasks,
+
+      error:
+        taskError,
     } =
       await supabaseAdmin
         .from("tasks")
@@ -665,31 +844,43 @@ export const getTeamProgressProjectById =
         .order(
           "created_at",
           {
-            ascending: false,
+            ascending:
+              false,
           }
         );
 
 
-    if (taskError) {
+    if (
+      taskError
+    ) {
+
       throw new Error(
         `Unable to load project tasks: ${taskError.message}`
       );
     }
 
 
-    const taskAssigneeIds =
+    const assigneeIds =
       [
         ...new Set(
-          (tasks ?? [])
+          (
+            tasks ??
+            []
+          )
             .map(
-              (task) =>
+              (
+                task
+              ) =>
                 task.assigned_to
             )
             .filter(
               (
                 value
-              ): value is string =>
-                Boolean(value)
+              ):
+                value is string =>
+                  Boolean(
+                    value
+                  )
             )
         ),
       ];
@@ -698,16 +889,20 @@ export const getTeamProgressProjectById =
     let assigneeProfiles:
       Array<{
         id: string;
-        full_name: string | null;
+
+        full_name:
+          string | null;
+
         email: string;
       }> =
       [];
 
 
     if (
-      taskAssigneeIds.length >
+      assigneeIds.length >
       0
     ) {
+
       const {
         data,
         error,
@@ -721,28 +916,40 @@ export const getTeamProgressProjectById =
           `)
           .in(
             "id",
-            taskAssigneeIds
+            assigneeIds
           );
 
 
-      if (!error) {
+      if (
+        !error
+      ) {
+
         assigneeProfiles =
-          data ?? [];
+          data ??
+          [];
       }
     }
 
 
     const tasksWithAssignee =
-      (tasks ?? []).map(
-        (task) => ({
+      (
+        tasks ??
+        []
+      ).map(
+        (
+          task
+        ) => ({
           ...task,
 
           assignee:
             assigneeProfiles.find(
-              (profile) =>
+              (
+                profile
+              ) =>
                 profile.id ===
                 task.assigned_to
-            ) ?? null,
+            ) ??
+            null,
         })
       );
 
@@ -751,7 +958,8 @@ export const getTeamProgressProjectById =
       ...project,
 
       allocated_teams:
-        allocations ?? [],
+        allocations ??
+        [],
 
       available_members:
         availableMembers,
@@ -763,19 +971,33 @@ export const getTeamProgressProjectById =
 
 
 /*
- * ========================================================
- * UPDATE PROJECT STATUS
- * ========================================================
+ * =========================================================
+ * UPDATE PROJECT PROGRESS
+ *
+ * IMPORTANT:
+ *
+ * "done" from Team Progress means:
+ *
+ * TEAM FINISHED WORK
+ *
+ * It does NOT mean management confirmed the project.
+ *
+ * Therefore "done" submits it to completion review instead.
+ * =========================================================
  */
 
 export const updateProjectProgressStatus =
   async (
     projectId: string,
+
     status:
       ProjectProgressStatus,
+
     completionNotes:
       string | null,
+
     userId: string,
+
     role: string
   ) => {
 
@@ -791,6 +1013,7 @@ export const updateProjectProgressStatus =
         projectId
       )
     ) {
+
       throw new Error(
         "You do not have access to this project"
       );
@@ -798,15 +1021,19 @@ export const updateProjectProgressStatus =
 
 
     const {
-      data: currentProject,
-      error: currentError,
+      data:
+        currentProject,
+
+      error:
+        currentError,
     } =
       await supabaseAdmin
         .from("projects")
         .select(`
           id,
           status,
-          actual_start_date
+          actual_start_date,
+          completion_review_status
         `)
         .eq(
           "id",
@@ -819,70 +1046,231 @@ export const updateProjectProgressStatus =
       currentError ||
       !currentProject
     ) {
+
       throw new Error(
         "Project not found"
       );
     }
 
 
+    if (
+      currentProject
+        .completion_review_status ===
+      "confirmed"
+    ) {
+
+      throw new Error(
+        "Confirmed projects cannot be changed"
+      );
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * TEAM MARKS WORK COMPLETED
+     *
+     * Send to management review.
+     * -----------------------------------------------------
+     */
+
+    if (
+      status ===
+      "done"
+    ) {
+
+      /*
+       * Every existing task must be Done.
+       */
+
+      const {
+        data:
+          tasks,
+
+        error:
+          taskError,
+      } =
+        await supabaseAdmin
+          .from("tasks")
+          .select(`
+            id,
+            status
+          `)
+          .eq(
+            "project_id",
+            projectId
+          );
+
+
+      if (
+        taskError
+      ) {
+
+        throw new Error(
+          `Unable to verify project tasks: ${taskError.message}`
+        );
+      }
+
+
+      const incomplete =
+        (
+          tasks ??
+          []
+        ).filter(
+          (
+            task
+          ) =>
+            task.status !==
+            "done"
+        );
+
+
+      if (
+        incomplete.length >
+        0
+      ) {
+
+        throw new Error(
+          `${incomplete.length} task(s) are not Done`
+        );
+      }
+
+
+      const now =
+        new Date()
+          .toISOString();
+
+
+      const {
+        data,
+        error,
+      } =
+        await supabaseAdmin
+          .from("projects")
+          .update({
+            /*
+             * Do NOT set final status Done.
+             *
+             * Final Done belongs to manager confirmation.
+             */
+
+            status:
+              currentProject
+                .status ===
+                "assigned"
+                ? "ongoing"
+                : currentProject
+                    .status,
+
+            completion_review_status:
+              "pending_review",
+
+            team_completed_at:
+              now,
+
+            team_completed_by:
+              userId,
+
+            completion_notes:
+              completionNotes ??
+              null,
+
+            actual_end_date:
+              null,
+
+            senior_reviewed_at:
+              null,
+
+            senior_reviewed_by:
+              null,
+
+            senior_review_notes:
+              null,
+
+            final_update_at:
+              null,
+          })
+          .eq(
+            "id",
+            projectId
+          )
+          .select()
+          .single();
+
+
+      if (
+        error ||
+        !data
+      ) {
+
+        throw new Error(
+          `Unable to submit project for completion review: ${
+            error?.message ||
+            "Unknown error"
+          }`
+        );
+      }
+
+
+      await supabaseAdmin
+        .from("activities")
+        .insert({
+          user_id:
+            userId,
+
+          entity_type:
+            "project",
+
+          entity_id:
+            projectId,
+
+          action:
+            "completion_submitted",
+
+          description:
+            "Team submitted project for completion review",
+
+          metadata: {
+            completionReviewStatus:
+              "pending_review",
+          },
+        });
+
+
+      return data;
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * NORMAL PROGRESS STATUS
+     * -----------------------------------------------------
+     */
+
     const updates:
-      Record<string, unknown> =
+      Record<
+        string,
+        unknown
+      > =
       {
         status,
       };
 
 
-    /*
-     * First time work starts.
-     */
     if (
-      status === "ongoing" &&
+      status ===
+        "ongoing" &&
       !currentProject
         .actual_start_date
     ) {
-      updates.actual_start_date =
+
+      updates
+        .actual_start_date =
         new Date()
           .toISOString()
           .slice(
             0,
             10
           );
-    }
-
-
-    /*
-     * Project completed.
-     */
-    if (
-      status === "done"
-    ) {
-      updates.actual_end_date =
-        new Date()
-          .toISOString()
-          .slice(
-            0,
-            10
-          );
-
-
-      if (
-        completionNotes
-      ) {
-        updates.completion_notes =
-          completionNotes;
-      }
-    }
-
-
-    /*
-     * If project is reopened,
-     * clear end date.
-     */
-    if (
-      status !== "done"
-    ) {
-      updates.actual_end_date =
-        null;
     }
 
 
@@ -892,7 +1280,9 @@ export const updateProjectProgressStatus =
     } =
       await supabaseAdmin
         .from("projects")
-        .update(updates)
+        .update(
+          updates
+        )
         .eq(
           "id",
           projectId
@@ -901,21 +1291,20 @@ export const updateProjectProgressStatus =
         .single();
 
 
-    if (error) {
-      console.error(
-        "UPDATE PROJECT STATUS ERROR:",
-        error
-      );
+    if (
+      error ||
+      !data
+    ) {
 
       throw new Error(
-        `Unable to update project status: ${error.message}`
+        `Unable to update project status: ${
+          error?.message ||
+          "Unknown error"
+        }`
       );
     }
 
 
-    /*
-     * Activity log.
-     */
     await supabaseAdmin
       .from("activities")
       .insert({
@@ -945,15 +1334,16 @@ export const updateProjectProgressStatus =
 
 
 /*
- * ========================================================
- * CREATE PROJECT TASK
- * ========================================================
+ * =========================================================
+ * CREATE TASK
+ * =========================================================
  */
 
 export const createProjectTask =
   async (
     input:
       CreateTaskInput,
+
     role: string
   ) => {
 
@@ -969,8 +1359,59 @@ export const createProjectTask =
         input.projectId
       )
     ) {
+
       throw new Error(
         "You do not have access to this project"
+      );
+    }
+
+
+    /*
+     * Verify project is editable.
+     */
+
+    const {
+      data:
+        project,
+
+      error:
+        projectError,
+    } =
+      await supabaseAdmin
+        .from("projects")
+        .select(`
+          id,
+          completion_review_status
+        `)
+        .eq(
+          "id",
+          input.projectId
+        )
+        .single();
+
+
+    if (
+      projectError ||
+      !project
+    ) {
+
+      throw new Error(
+        "Project not found"
+      );
+    }
+
+
+    if (
+      project
+        .completion_review_status ===
+        "pending_review" ||
+      project
+        .completion_review_status ===
+        "confirmed"
+    ) {
+
+      throw new Error(
+        "Tasks cannot be changed while the project is under completion review"
       );
     }
 
@@ -981,25 +1422,31 @@ export const createProjectTask =
 
 
     /*
-     * Validate the assignee belongs
-     * to a team allocated to project.
+     * Find allocated teams.
      */
+
     const {
-      data: allocations,
-      error: allocationError,
+      data:
+        allocations,
+
+      error:
+        allocationError,
     } =
       await supabaseAdmin
         .from("project_teams")
-        .select(
-          "team_id"
-        )
+        .select(`
+          team_id
+        `)
         .eq(
           "project_id",
           input.projectId
         );
 
 
-    if (allocationError) {
+    if (
+      allocationError
+    ) {
+
       throw new Error(
         `Unable to validate project team: ${allocationError.message}`
       );
@@ -1007,24 +1454,38 @@ export const createProjectTask =
 
 
     const teamIds =
-      (allocations ?? []).map(
-        (item) =>
-          item.team_id
+      (
+        allocations ??
+        []
+      ).map(
+        (
+          allocation
+        ) =>
+          allocation.team_id
       );
 
 
     if (
-      teamIds.length === 0
+      teamIds.length ===
+      0
     ) {
+
       throw new Error(
-        "This project does not have an allocated team"
+        "Project does not have an allocated team"
       );
     }
 
 
+    /*
+     * Assignee must belong to allocated team.
+     */
+
     const {
-      data: membership,
-      error: membershipError,
+      data:
+        membership,
+
+      error:
+        membershipError,
     } =
       await supabaseAdmin
         .from("team_members")
@@ -1047,8 +1508,9 @@ export const createProjectTask =
       membershipError ||
       !membership
     ) {
+
       throw new Error(
-        "Selected task assignee does not belong to the allocated project team"
+        "Task assignee does not belong to the allocated project team"
       );
     }
 
@@ -1067,7 +1529,7 @@ export const createProjectTask =
             input.title,
 
           description:
-            input.description ||
+            input.description ??
             null,
 
           assigned_to:
@@ -1077,7 +1539,7 @@ export const createProjectTask =
             "pending",
 
           due_date:
-            input.dueDate ||
+            input.dueDate ??
             null,
 
           created_by:
@@ -1087,14 +1549,16 @@ export const createProjectTask =
         .single();
 
 
-    if (error) {
-      console.error(
-        "CREATE TASK ERROR:",
-        error
-      );
+    if (
+      error ||
+      !data
+    ) {
 
       throw new Error(
-        `Unable to create task: ${error.message}`
+        `Unable to create task: ${
+          error?.message ||
+          "Unknown error"
+        }`
       );
     }
 
@@ -1104,23 +1568,29 @@ export const createProjectTask =
 
 
 /*
- * ========================================================
+ * =========================================================
  * UPDATE TASK STATUS
- * ========================================================
+ * =========================================================
  */
 
 export const updateTaskProgressStatus =
   async (
     taskId: string,
+
     status:
       TaskProgressStatus,
+
     userId: string,
+
     role: string
   ) => {
 
     const {
-      data: task,
-      error: taskError,
+      data:
+        task,
+
+      error:
+        taskError,
     } =
       await supabaseAdmin
         .from("tasks")
@@ -1140,6 +1610,7 @@ export const updateTaskProgressStatus =
       taskError ||
       !task
     ) {
+
       throw new Error(
         "Task not found"
       );
@@ -1158,26 +1629,79 @@ export const updateTaskProgressStatus =
         task.project_id
       )
     ) {
+
       throw new Error(
         "You do not have access to this task"
       );
     }
 
 
+    const {
+      data:
+        project,
+
+      error:
+        projectError,
+    } =
+      await supabaseAdmin
+        .from("projects")
+        .select(`
+          completion_review_status
+        `)
+        .eq(
+          "id",
+          task.project_id
+        )
+        .single();
+
+
+    if (
+      projectError ||
+      !project
+    ) {
+
+      throw new Error(
+        "Project not found"
+      );
+    }
+
+
+    if (
+      project
+        .completion_review_status ===
+        "pending_review" ||
+      project
+        .completion_review_status ===
+        "confirmed"
+    ) {
+
+      throw new Error(
+        "Task cannot be changed while the project is under completion review"
+      );
+    }
+
+
     const updates:
-      Record<string, unknown> =
+      Record<
+        string,
+        unknown
+      > =
       {
         status,
       };
 
 
     if (
-      status === "done"
+      status ===
+      "done"
     ) {
+
       updates.completed_at =
         new Date()
           .toISOString();
+
     } else {
+
       updates.completed_at =
         null;
     }
@@ -1200,14 +1724,16 @@ export const updateTaskProgressStatus =
         .single();
 
 
-    if (error) {
-      console.error(
-        "UPDATE TASK STATUS ERROR:",
-        error
-      );
+    if (
+      error ||
+      !data
+    ) {
 
       throw new Error(
-        `Unable to update task: ${error.message}`
+        `Unable to update task: ${
+          error?.message ||
+          "Unknown error"
+        }`
       );
     }
 
@@ -1232,6 +1758,7 @@ export const updateTaskProgressStatus =
 
         metadata: {
           status,
+
           projectId:
             task.project_id,
         },

@@ -2,25 +2,27 @@ import {
   supabaseAdmin,
 } from "../config/supabase";
 
-export interface CreateContactInput {
-  companyId?: string | null;
+
+export interface CreateContactData {
+  companyId: string | null;
 
   firstName: string;
 
-  lastName?: string;
+  lastName: string | null;
 
-  email?: string;
+  email: string | null;
 
-  phone?: string;
+  phone: string | null;
 
-  jobTitle?: string;
+  jobTitle: string | null;
 
-  notes?: string;
+  notes: string | null;
 
   createdBy: string;
 }
 
-export interface UpdateContactInput {
+
+export interface UpdateContactData {
   companyId?: string | null;
 
   firstName?: string;
@@ -37,42 +39,39 @@ export interface UpdateContactInput {
 }
 
 
-const contactSelect = `
-  id,
-  company_id,
-  first_name,
-  last_name,
-  email,
-  phone,
-  job_title,
-  notes,
-  archived_at,
-  created_at,
-  updated_at,
-
-  companies (
-    id,
-    name
-  )
-`;
-
-
 /*
- * GET all active contacts.
+ * =========================================================
+ * GET ALL CONTACTS
+ * =========================================================
  */
-export const getContacts =
+
+export const getAllContacts =
   async () => {
+
     const {
       data,
       error,
     } =
       await supabaseAdmin
         .from("contacts")
-        .select(contactSelect)
-        .is(
-          "archived_at",
-          null
-        )
+        .select(`
+          id,
+          company_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          job_title,
+          notes,
+          created_by,
+          created_at,
+          updated_at,
+
+          companies (
+            id,
+            name
+          )
+        `)
         .order(
           "created_at",
           {
@@ -80,67 +79,95 @@ export const getContacts =
           }
         );
 
+
     if (error) {
       console.error(
-        "GET CONTACTS DATABASE ERROR:",
+        "GET CONTACTS ERROR:",
         error
       );
 
       throw new Error(
-        `Unable to load contacts: ${error.message}`
+        error.message
       );
     }
 
-    return data;
+
+    return data ?? [];
   };
 
 
 /*
- * GET one contact.
+ * =========================================================
+ * GET ONE CONTACT
+ * =========================================================
  */
-export const getContactById =
+
+export const getContactRecordById =
   async (
-    contactId: string
+    id: string
   ) => {
+
     const {
       data,
       error,
     } =
       await supabaseAdmin
         .from("contacts")
-        .select(contactSelect)
+        .select(`
+          id,
+          company_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          job_title,
+          notes,
+          created_by,
+          created_at,
+          updated_at,
+
+          companies (
+            id,
+            name
+          )
+        `)
         .eq(
           "id",
-          contactId
+          id
         )
         .single();
 
-    if (error) {
+
+    if (
+      error ||
+      !data
+    ) {
       console.error(
-        "GET CONTACT DATABASE ERROR:",
+        "GET CONTACT ERROR:",
         error
       );
 
       throw new Error(
-        `Unable to load contact: ${error.message}`
+        "Contact not found"
       );
     }
+
 
     return data;
   };
 
 
 /*
- * CREATE contact.
+ * =========================================================
+ * CREATE CONTACT
+ * =========================================================
  */
-export const createContact =
+
+export const createContactRecord =
   async (
-    input: CreateContactInput
+    input:
+      CreateContactData
   ) => {
-    console.log(
-      "CONTACT SERVICE INPUT:",
-      input
-    );
 
     const {
       data,
@@ -150,39 +177,49 @@ export const createContact =
         .from("contacts")
         .insert({
           company_id:
-            input.companyId ||
-            null,
+            input.companyId,
 
           first_name:
             input.firstName,
 
           last_name:
-            input.lastName ||
-            null,
+            input.lastName,
 
           email:
-            input.email ||
-            null,
+            input.email,
 
           phone:
-            input.phone ||
-            null,
+            input.phone,
 
           job_title:
-            input.jobTitle ||
-            null,
+            input.jobTitle,
 
           notes:
-            input.notes ||
-            null,
+            input.notes,
 
           created_by:
             input.createdBy,
         })
-        .select(
-          contactSelect
-        )
+        .select(`
+          id,
+          company_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          job_title,
+          notes,
+          created_by,
+          created_at,
+          updated_at,
+
+          companies (
+            id,
+            name
+          )
+        `)
         .single();
+
 
     if (error) {
       console.error(
@@ -191,33 +228,38 @@ export const createContact =
       );
 
       throw new Error(
-        `Unable to create contact: ${error.message}`
+        error.message
       );
     }
+
 
     return data;
   };
 
 
 /*
- * UPDATE contact.
+ * =========================================================
+ * UPDATE CONTACT
+ * =========================================================
  */
-export const updateContact =
+
+export const updateContactRecord =
   async (
-    contactId: string,
-    input: UpdateContactInput
+    id: string,
+    input:
+      UpdateContactData
   ) => {
-    const updates: Record<
-      string,
-      unknown
-    > = {};
+
+    const updateData:
+      Record<string, unknown> =
+      {};
 
 
     if (
       input.companyId !==
       undefined
     ) {
-      updates.company_id =
+      updateData.company_id =
         input.companyId;
     }
 
@@ -226,7 +268,7 @@ export const updateContact =
       input.firstName !==
       undefined
     ) {
-      updates.first_name =
+      updateData.first_name =
         input.firstName;
     }
 
@@ -235,7 +277,7 @@ export const updateContact =
       input.lastName !==
       undefined
     ) {
-      updates.last_name =
+      updateData.last_name =
         input.lastName;
     }
 
@@ -244,7 +286,7 @@ export const updateContact =
       input.email !==
       undefined
     ) {
-      updates.email =
+      updateData.email =
         input.email;
     }
 
@@ -253,7 +295,7 @@ export const updateContact =
       input.phone !==
       undefined
     ) {
-      updates.phone =
+      updateData.phone =
         input.phone;
     }
 
@@ -262,7 +304,7 @@ export const updateContact =
       input.jobTitle !==
       undefined
     ) {
-      updates.job_title =
+      updateData.job_title =
         input.jobTitle;
     }
 
@@ -271,7 +313,7 @@ export const updateContact =
       input.notes !==
       undefined
     ) {
-      updates.notes =
+      updateData.notes =
         input.notes;
     }
 
@@ -282,14 +324,31 @@ export const updateContact =
     } =
       await supabaseAdmin
         .from("contacts")
-        .update(updates)
+        .update(
+          updateData
+        )
         .eq(
           "id",
-          contactId
+          id
         )
-        .select(
-          contactSelect
-        )
+        .select(`
+          id,
+          company_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          job_title,
+          notes,
+          created_by,
+          created_at,
+          updated_at,
+
+          companies (
+            id,
+            name
+          )
+        `)
         .single();
 
 
@@ -300,10 +359,49 @@ export const updateContact =
       );
 
       throw new Error(
-        `Unable to update contact: ${error.message}`
+        error.message
       );
     }
 
 
     return data;
+  };
+
+
+/*
+ * =========================================================
+ * DELETE CONTACT
+ * =========================================================
+ */
+
+export const deleteContactRecord =
+  async (
+    id: string
+  ) => {
+
+    const {
+      error,
+    } =
+      await supabaseAdmin
+        .from("contacts")
+        .delete()
+        .eq(
+          "id",
+          id
+        );
+
+
+    if (error) {
+      console.error(
+        "DELETE CONTACT DATABASE ERROR:",
+        error
+      );
+
+      throw new Error(
+        error.message
+      );
+    }
+
+
+    return true;
   };

@@ -3,10 +3,11 @@ import {
 } from "express";
 
 import {
-  addContact,
-  editContact,
-  getSingleContact,
-  listContacts,
+  createContactHandler,
+  deleteContactHandler,
+  getContactHandler,
+  getContactsHandler,
+  updateContactHandler,
 } from "../controllers/contact.controller";
 
 import {
@@ -22,41 +23,95 @@ const router =
   Router();
 
 
+/*
+ * =========================================================
+ * CONTACT ROUTES
+ * =========================================================
+ */
+
+
+/*
+ * GET ALL
+ *
+ * GET /api/contacts
+ */
 router.get(
   "/contacts",
   requireAuth,
-  listContacts
+  allowRoles(
+    "sales_rep",
+    "sales_manager",
+    "senior_manager"
+  ),
+  getContactsHandler
 );
 
 
+/*
+ * GET ONE
+ *
+ * GET /api/contacts/:id
+ */
 router.get(
   "/contacts/:id",
   requireAuth,
-  getSingleContact
+  allowRoles(
+    "sales_rep",
+    "sales_manager",
+    "senior_manager"
+  ),
+  getContactHandler
 );
 
 
+/*
+ * CREATE
+ *
+ * POST /api/contacts
+ */
 router.post(
   "/contacts",
   requireAuth,
   allowRoles(
-    "sales_manager",
     "sales_rep",
+    "sales_manager",
     "senior_manager"
   ),
-  addContact
+  createContactHandler
 );
 
 
+/*
+ * UPDATE
+ *
+ * PATCH /api/contacts/:id
+ */
 router.patch(
   "/contacts/:id",
   requireAuth,
   allowRoles(
-    "sales_manager",
     "sales_rep",
+    "sales_manager",
     "senior_manager"
   ),
-  editContact
+  updateContactHandler
+);
+
+
+/*
+ * DELETE
+ *
+ * DELETE /api/contacts/:id
+ */
+router.delete(
+  "/contacts/:id",
+  requireAuth,
+  allowRoles(
+    "sales_rep",
+    "sales_manager",
+    "senior_manager"
+  ),
+  deleteContactHandler
 );
 
 

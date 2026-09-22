@@ -1,4 +1,6 @@
-import { api } from "../../api/http";
+import {
+  api,
+} from "../../api/http";
 
 import type {
   Contact,
@@ -6,54 +8,200 @@ import type {
   UpdateContactInput,
 } from "./contact.types";
 
+
+/*
+ * =========================================================
+ * GET ALL
+ * =========================================================
+ */
+
 export const fetchContacts =
   async (): Promise<Contact[]> => {
-    const response =
-      await api.get("/contacts");
 
-    return response.data.data;
+    const response =
+      await api.get(
+        "/contacts"
+      );
+
+
+    return (
+      response.data.data ??
+      []
+    );
   };
+
+
+/*
+ * =========================================================
+ * GET ONE
+ * =========================================================
+ */
 
 export const fetchContactById =
   async (
-    contactId: string
+    id: string
   ): Promise<Contact> => {
+
     const response =
       await api.get(
-        `/contacts/${contactId}`
+        `/contacts/${id}`
       );
+
 
     return response.data.data;
   };
 
+
+/*
+ * =========================================================
+ * CREATE
+ * =========================================================
+ */
+
 export const createContact =
   async (
-    input: CreateContactInput
+    input:
+      CreateContactInput
   ): Promise<Contact> => {
+
+    const payload = {
+
+      companyId:
+        input.companyId ||
+        null,
+
+      firstName:
+        input.firstName,
+
+      lastName:
+        input.lastName ||
+        "",
+
+      email:
+        input.email ||
+        "",
+
+      phone:
+        input.phone ||
+        "",
+
+      jobTitle:
+        input.jobTitle ||
+        "",
+
+      notes:
+        input.notes ||
+        "",
+    };
+
+
     console.log(
-      "CONTACT API INPUT:",
-      input
+      "CONTACT API PAYLOAD:",
+      payload
     );
+
+
+    /*
+     * Axios:
+     *
+     * post(
+     *   URL,
+     *   BODY,
+     *   CONFIG
+     * )
+     *
+     * payload MUST be second argument.
+     */
 
     const response =
       await api.post(
         "/contacts",
-        input
+
+        payload,
+
+        {
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+        }
       );
+
 
     return response.data.data;
   };
 
+
+/*
+ * =========================================================
+ * UPDATE
+ * =========================================================
+ */
+
 export const updateContact =
   async (
-    contactId: string,
-    input: UpdateContactInput
+    id: string,
+    input:
+      UpdateContactInput
   ): Promise<Contact> => {
+
+    const payload = {
+
+      companyId:
+        input.companyId ??
+        null,
+
+      firstName:
+        input.firstName,
+
+      lastName:
+        input.lastName,
+
+      email:
+        input.email,
+
+      phone:
+        input.phone,
+
+      jobTitle:
+        input.jobTitle,
+
+      notes:
+        input.notes,
+    };
+
+
     const response =
       await api.patch(
-        `/contacts/${contactId}`,
-        input
+        `/contacts/${id}`,
+
+        payload,
+
+        {
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+        }
       );
 
+
     return response.data.data;
+  };
+
+
+/*
+ * =========================================================
+ * DELETE
+ * =========================================================
+ */
+
+export const deleteContact =
+  async (
+    id: string
+  ): Promise<void> => {
+
+    await api.delete(
+      `/contacts/${id}`
+    );
   };

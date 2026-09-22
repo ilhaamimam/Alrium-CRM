@@ -521,6 +521,18 @@ export const listProjectsForAllocation =
  * ========================================================
  */
 
+/*
+ * ========================================================
+ * POST /api/team-allocation/projects/:projectId
+ *
+ * NOTE:
+ *
+ * :projectId may initially be a production-ready Lead ID.
+ *
+ * The service resolves/creates the actual project.
+ * ========================================================
+ */
+
 export const assignTeam =
   async (
     req: Request<{
@@ -531,7 +543,9 @@ export const assignTeam =
 
     try {
 
-      if (!req.user) {
+      if (
+        !req.user
+      ) {
 
         return res
           .status(401)
@@ -546,16 +560,28 @@ export const assignTeam =
 
       const {
         teamId,
+
         plannedStartDate,
+
         plannedEndDate,
+
+        /*
+         * Compatibility with older
+         * TeamAllocationPage versions.
+         */
+
+        startDate,
+
+        endDate,
       } =
-        req.body ?? {};
+        req.body ??
+        {};
 
 
       if (
         typeof teamId !==
           "string" ||
-        !teamId
+        !teamId.trim()
       ) {
 
         return res
@@ -569,11 +595,31 @@ export const assignTeam =
       }
 
 
+      const normalizedStartDate =
+        typeof plannedStartDate ===
+          "string"
+          ? plannedStartDate
+          : typeof startDate ===
+              "string"
+            ? startDate
+            : null;
+
+
+      const normalizedEndDate =
+        typeof plannedEndDate ===
+          "string"
+          ? plannedEndDate
+          : typeof endDate ===
+              "string"
+            ? endDate
+            : null;
+
+
       if (
-        plannedStartDate &&
-        plannedEndDate &&
-        plannedEndDate <
-          plannedStartDate
+        normalizedStartDate &&
+        normalizedEndDate &&
+        normalizedEndDate <
+          normalizedStartDate
       ) {
 
         return res
@@ -592,15 +638,14 @@ export const assignTeam =
           projectId:
             req.params.projectId,
 
-          teamId,
+          teamId:
+            teamId.trim(),
 
           plannedStartDate:
-            plannedStartDate ||
-            null,
+            normalizedStartDate,
 
           plannedEndDate:
-            plannedEndDate ||
-            null,
+            normalizedEndDate,
 
           assignedBy:
             req.user.id,
@@ -613,9 +658,10 @@ export const assignTeam =
           success: true,
 
           message:
-            "Team allocated successfully",
+            "Team allocated successfully. Delivery project created and assigned.",
 
-          data: project,
+          data:
+            project,
         });
 
     } catch (error) {

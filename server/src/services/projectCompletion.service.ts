@@ -12,22 +12,23 @@ export type CompletionReviewStatus =
 
 /*
  * =========================================================
- * CHECK TEAM MEMBER PROJECT ACCESS
+ * PROJECT ACCESS
  * =========================================================
  */
 
 const ensureProjectAccess =
   async (
     projectId: string,
+
     userId: string
   ) => {
 
-    /*
-     * Find teams allocated to project.
-     */
     const {
-      data: allocations,
-      error: allocationError,
+      data:
+        allocations,
+
+      error:
+        allocationError,
     } =
       await supabaseAdmin
         .from("project_teams")
@@ -40,7 +41,10 @@ const ensureProjectAccess =
         );
 
 
-    if (allocationError) {
+    if (
+      allocationError
+    ) {
+
       throw new Error(
         `Unable to check project allocation: ${allocationError.message}`
       );
@@ -48,28 +52,34 @@ const ensureProjectAccess =
 
 
     const teamIds =
-      (allocations ?? []).map(
-        (item) =>
-          item.team_id
+      (
+        allocations ??
+        []
+      ).map(
+        (
+          allocation
+        ) =>
+          allocation.team_id
       );
 
 
     if (
-      teamIds.length === 0
+      teamIds.length ===
+      0
     ) {
+
       throw new Error(
         "This project does not have an allocated team"
       );
     }
 
 
-    /*
-     * Check current user belongs
-     * to one of those teams.
-     */
     const {
-      data: membership,
-      error: membershipError,
+      data:
+        membership,
+
+      error:
+        membershipError,
     } =
       await supabaseAdmin
         .from("team_members")
@@ -92,6 +102,7 @@ const ensureProjectAccess =
       membershipError ||
       !membership
     ) {
+
       throw new Error(
         "You do not have access to complete this project"
       );
@@ -101,26 +112,24 @@ const ensureProjectAccess =
 
 /*
  * =========================================================
- * GET PROJECT COMPLETION STATUS
- *
- * Used by Team Progress page.
+ * COMPLETION STATUS
  * =========================================================
  */
 
 export const getProjectCompletionStatus =
   async (
     projectId: string,
+
     userId: string,
+
     role: string
   ) => {
 
-    /*
-     * Team Members need allocated-team access.
-     * Senior Manager is allowed to inspect.
-     */
     if (
-      role === "team_member"
+      role ===
+      "team_member"
     ) {
+
       await ensureProjectAccess(
         projectId,
         userId
@@ -157,6 +166,7 @@ export const getProjectCompletionStatus =
       error ||
       !data
     ) {
+
       throw new Error(
         "Project not found"
       );
@@ -169,26 +179,27 @@ export const getProjectCompletionStatus =
 
 /*
  * =========================================================
- * TEAM SUBMITS PROJECT FOR COMPLETION
+ * TEAM SUBMITS COMPLETION
  * =========================================================
  */
 
 export const submitProjectCompletion =
   async (
     projectId: string,
+
     userId: string,
+
     role: string,
+
     completionNotes:
       string | null
   ) => {
 
-    /*
-     * Team Member must belong
-     * to allocated team.
-     */
     if (
-      role === "team_member"
+      role ===
+      "team_member"
     ) {
+
       await ensureProjectAccess(
         projectId,
         userId
@@ -197,8 +208,11 @@ export const submitProjectCompletion =
 
 
     const {
-      data: project,
-      error: projectError,
+      data:
+        project,
+
+      error:
+        projectError,
     } =
       await supabaseAdmin
         .from("projects")
@@ -219,6 +233,7 @@ export const submitProjectCompletion =
       projectError ||
       !project
     ) {
+
       throw new Error(
         "Project not found"
       );
@@ -226,22 +241,27 @@ export const submitProjectCompletion =
 
 
     if (
-      project.status ===
-      "done"
+      project
+        .completion_review_status ===
+      "confirmed"
     ) {
+
       throw new Error(
-        "This project is already confirmed Done"
+        "This project is already confirmed completed"
       );
     }
 
 
     /*
-     * Every existing task must
-     * be completed first.
+     * Every task must be done.
      */
+
     const {
-      data: tasks,
-      error: taskError,
+      data:
+        tasks,
+
+      error:
+        taskError,
     } =
       await supabaseAdmin
         .from("tasks")
@@ -256,7 +276,10 @@ export const submitProjectCompletion =
         );
 
 
-    if (taskError) {
+    if (
+      taskError
+    ) {
+
       throw new Error(
         `Unable to check project tasks: ${taskError.message}`
       );
@@ -264,8 +287,13 @@ export const submitProjectCompletion =
 
 
     const incompleteTasks =
-      (tasks ?? []).filter(
-        (task) =>
+      (
+        tasks ??
+        []
+      ).filter(
+        (
+          task
+        ) =>
           task.status !==
           "done"
       );
@@ -275,6 +303,7 @@ export const submitProjectCompletion =
       incompleteTasks.length >
       0
     ) {
+
       throw new Error(
         `${incompleteTasks.length} task(s) are not Done. Complete all tasks before submitting the project.`
       );
@@ -303,13 +332,9 @@ export const submitProjectCompletion =
             userId,
 
           completion_notes:
-            completionNotes ||
+            completionNotes ??
             null,
 
-          /*
-           * Reset previous review
-           * when resubmitting.
-           */
           senior_reviewed_at:
             null,
 
@@ -324,6 +349,16 @@ export const submitProjectCompletion =
 
           actual_end_date:
             null,
+
+          /*
+           * Team completion is not final Done.
+           */
+
+          status:
+            project.status ===
+            "assigned"
+              ? "ongoing"
+              : project.status,
         })
         .eq(
           "id",
@@ -333,14 +368,16 @@ export const submitProjectCompletion =
         .single();
 
 
-    if (error) {
-      console.error(
-        "SUBMIT COMPLETION ERROR:",
-        error
-      );
+    if (
+      error ||
+      !data
+    ) {
 
       throw new Error(
-        `Unable to submit project completion: ${error.message}`
+        `Unable to submit project completion: ${
+          error?.message ||
+          "Unknown error"
+        }`
       );
     }
 
@@ -361,7 +398,7 @@ export const submitProjectCompletion =
           "completion_submitted",
 
         description:
-          `Project "${project.name}" submitted for Senior Manager completion review`,
+          `Project "${project.name}" submitted for completion review`,
 
         metadata: {
           completionReviewStatus:
@@ -376,7 +413,13 @@ export const submitProjectCompletion =
 
 /*
  * =========================================================
- * SENIOR MANAGER - GET COMPLETION REVIEWS
+ * LIST COMPLETION PROJECTS
+ *
+ * No status:
+ * ALL allocated projects
+ *
+ * status:
+ * filter by real database enum.
  * =========================================================
  */
 
@@ -385,6 +428,11 @@ export const getCompletionReviews =
     status?:
       CompletionReviewStatus
   ) => {
+
+    /*
+     * project_teams!inner ensures only
+     * genuinely allocated projects appear.
+     */
 
     let query =
       supabaseAdmin
@@ -415,6 +463,7 @@ export const getCompletionReviews =
             title,
             temperature,
             workflow_stage,
+            estimated_budget,
             assigned_sales_rep_id,
             created_by,
 
@@ -432,12 +481,14 @@ export const getCompletionReviews =
             )
           ),
 
-          project_teams (
+          project_teams!inner (
             team_id,
+            assigned_at,
 
             teams (
               id,
-              name
+              name,
+              description
             )
           ),
 
@@ -450,19 +501,19 @@ export const getCompletionReviews =
             completed_at
           )
         `)
-        .neq(
-          "completion_review_status",
-          "not_submitted"
-        )
         .order(
-          "team_completed_at",
+          "updated_at",
           {
-            ascending: false,
+            ascending:
+              false,
           }
         );
 
 
-    if (status) {
+    if (
+      status
+    ) {
+
       query =
         query.eq(
           "completion_review_status",
@@ -478,11 +529,15 @@ export const getCompletionReviews =
       await query;
 
 
-    if (error) {
+    if (
+      error
+    ) {
+
       console.error(
         "GET COMPLETION REVIEWS ERROR:",
         error
       );
+
 
       throw new Error(
         `Unable to load completion reviews: ${error.message}`
@@ -490,13 +545,16 @@ export const getCompletionReviews =
     }
 
 
-    return data;
+    return (
+      data ??
+      []
+    );
   };
 
 
 /*
  * =========================================================
- * SENIOR MANAGER - GET ONE COMPLETION REVIEW
+ * GET ONE REVIEW
  * =========================================================
  */
 
@@ -537,6 +595,7 @@ export const getCompletionReviewById =
             title,
             temperature,
             workflow_stage,
+            estimated_budget,
             assigned_sales_rep_id,
             created_by,
 
@@ -556,10 +615,12 @@ export const getCompletionReviewById =
 
           project_teams (
             team_id,
+            assigned_at,
 
             teams (
               id,
-              name
+              name,
+              description
             )
           ),
 
@@ -586,6 +647,7 @@ export const getCompletionReviewById =
       error ||
       !data
     ) {
+
       throw new Error(
         "Completion review not found"
       );
@@ -598,27 +660,33 @@ export const getCompletionReviewById =
 
 /*
  * =========================================================
- * SENIOR MANAGER CONFIRMS PROJECT DONE
+ * MANAGER CONFIRMS COMPLETION
  * =========================================================
  */
 
 export const confirmProjectCompletion =
   async (
     projectId: string,
+
     seniorManagerId: string,
+
     reviewNotes:
       string | null
   ) => {
 
     const {
-      data: project,
-      error: projectError,
+      data:
+        project,
+
+      error:
+        projectError,
     } =
       await supabaseAdmin
         .from("projects")
         .select(`
           id,
           name,
+          lead_id,
           completion_review_status
         `)
         .eq(
@@ -632,6 +700,7 @@ export const confirmProjectCompletion =
       projectError ||
       !project
     ) {
+
       throw new Error(
         "Project not found"
       );
@@ -643,6 +712,7 @@ export const confirmProjectCompletion =
         .completion_review_status !==
       "pending_review"
     ) {
+
       throw new Error(
         "Only projects waiting for review can be confirmed"
       );
@@ -650,12 +720,15 @@ export const confirmProjectCompletion =
 
 
     /*
-     * Protect against a task being
-     * reopened after submission.
+     * Tasks must still be Done.
      */
+
     const {
-      data: tasks,
-      error: taskError,
+      data:
+        tasks,
+
+      error:
+        taskError,
     } =
       await supabaseAdmin
         .from("tasks")
@@ -669,7 +742,10 @@ export const confirmProjectCompletion =
         );
 
 
-    if (taskError) {
+    if (
+      taskError
+    ) {
+
       throw new Error(
         `Unable to verify project tasks: ${taskError.message}`
       );
@@ -677,8 +753,13 @@ export const confirmProjectCompletion =
 
 
     const incompleteTasks =
-      (tasks ?? []).filter(
-        (task) =>
+      (
+        tasks ??
+        []
+      ).filter(
+        (
+          task
+        ) =>
           task.status !==
           "done"
       );
@@ -688,8 +769,9 @@ export const confirmProjectCompletion =
       incompleteTasks.length >
       0
     ) {
+
       throw new Error(
-        "The project cannot be confirmed because one or more tasks are no longer Done"
+        "Project cannot be confirmed because one or more tasks are not Done"
       );
     }
 
@@ -726,16 +808,12 @@ export const confirmProjectCompletion =
             seniorManagerId,
 
           senior_review_notes:
-            reviewNotes ||
+            reviewNotes ??
             null,
 
           actual_end_date:
             today,
 
-          /*
-           * Sales/Marketing update
-           * becomes available now.
-           */
           final_update_at:
             now,
         })
@@ -747,14 +825,16 @@ export const confirmProjectCompletion =
         .single();
 
 
-    if (error) {
-      console.error(
-        "CONFIRM PROJECT COMPLETION ERROR:",
-        error
-      );
+    if (
+      error ||
+      !data
+    ) {
 
       throw new Error(
-        `Unable to confirm project completion: ${error.message}`
+        `Unable to confirm project completion: ${
+          error?.message ||
+          "Unknown error"
+        }`
       );
     }
 
@@ -775,7 +855,7 @@ export const confirmProjectCompletion =
           "completion_confirmed",
 
         description:
-          `Project "${project.name}" confirmed Done by Senior Manager`,
+          `Project "${project.name}" confirmed Done`,
 
         metadata: {
           status:
@@ -783,6 +863,9 @@ export const confirmProjectCompletion =
 
           completionReviewStatus:
             "confirmed",
+
+          leadId:
+            project.lead_id,
         },
       });
 
@@ -793,20 +876,23 @@ export const confirmProjectCompletion =
 
 /*
  * =========================================================
- * SENIOR MANAGER REQUESTS CHANGES
+ * REQUEST CHANGES
  * =========================================================
  */
 
 export const requestProjectCompletionChanges =
   async (
     projectId: string,
+
     seniorManagerId: string,
+
     reviewNotes: string
   ) => {
 
     if (
       !reviewNotes.trim()
     ) {
+
       throw new Error(
         "Review notes are required when requesting changes"
       );
@@ -814,8 +900,11 @@ export const requestProjectCompletionChanges =
 
 
     const {
-      data: project,
-      error: projectError,
+      data:
+        project,
+
+      error:
+        projectError,
     } =
       await supabaseAdmin
         .from("projects")
@@ -835,6 +924,7 @@ export const requestProjectCompletionChanges =
       projectError ||
       !project
     ) {
+
       throw new Error(
         "Project not found"
       );
@@ -846,8 +936,9 @@ export const requestProjectCompletionChanges =
         .completion_review_status !==
       "pending_review"
     ) {
+
       throw new Error(
-        "This project is not currently waiting for review"
+        "Project is not currently waiting for review"
       );
     }
 
@@ -893,9 +984,16 @@ export const requestProjectCompletionChanges =
         .single();
 
 
-    if (error) {
+    if (
+      error ||
+      !data
+    ) {
+
       throw new Error(
-        `Unable to request project changes: ${error.message}`
+        `Unable to request project changes: ${
+          error?.message ||
+          "Unknown error"
+        }`
       );
     }
 
@@ -916,7 +1014,7 @@ export const requestProjectCompletionChanges =
           "completion_changes_requested",
 
         description:
-          `Senior Manager requested changes for project "${project.name}"`,
+          `Changes requested for project "${project.name}"`,
 
         metadata: {
           reviewNotes:
@@ -931,19 +1029,14 @@ export const requestProjectCompletionChanges =
 
 /*
  * =========================================================
- * SALES / MARKETING FINAL UPDATES
- *
- * sales_manager = all final updates
- * sales_rep     = their own/assigned leads
- *
- * In your current role model Sales Manager represents the
- * Sales/Marketing Manager use case.
+ * FINAL / ARCHIVED UPDATES
  * =========================================================
  */
 
 export const getFinalProjectUpdates =
   async (
     userId: string,
+
     role: string
   ) => {
 
@@ -973,6 +1066,7 @@ export const getFinalProjectUpdates =
           leads (
             id,
             title,
+            temperature,
             assigned_sales_rep_id,
             created_by,
 
@@ -1008,12 +1102,16 @@ export const getFinalProjectUpdates =
         .order(
           "final_update_at",
           {
-            ascending: false,
+            ascending:
+              false,
           }
         );
 
 
-    if (error) {
+    if (
+      error
+    ) {
+
       throw new Error(
         `Unable to load final project updates: ${error.message}`
       );
@@ -1021,35 +1119,45 @@ export const getFinalProjectUpdates =
 
 
     /*
-     * Sales Manager / Marketing Manager
-     * sees every completed project.
+     * Both management roles can use service result.
      */
+
     if (
       role ===
-      "sales_manager"
+        "sales_manager" ||
+      role ===
+        "senior_manager"
     ) {
-      return data ?? [];
+
+      return (
+        data ??
+        []
+      );
     }
 
 
-    /*
-     * Sales Rep sees leads they created
-     * or were assigned.
-     */
     if (
       role ===
       "sales_rep"
     ) {
+
       return (
-        data ?? []
+        data ??
+        []
       ).filter(
-        (project: any) => {
+        (
+          project:
+            any
+        ) => {
 
           const lead =
             project.leads;
 
 
-          if (!lead) {
+          if (
+            !lead
+          ) {
+
             return false;
           }
 

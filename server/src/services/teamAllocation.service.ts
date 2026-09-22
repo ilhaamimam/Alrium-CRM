@@ -6,7 +6,8 @@ import {
 export interface CreateTeamInput {
   name: string;
 
-  description?: string | null;
+  description?:
+    string | null;
 
   createdBy: string;
 }
@@ -15,7 +16,8 @@ export interface CreateTeamInput {
 export interface UpdateTeamInput {
   name?: string;
 
-  description?: string | null;
+  description?:
+    string | null;
 }
 
 
@@ -24,29 +26,46 @@ export interface AddTeamMemberInput {
 
   userId: string;
 
-  roleInTeam?: string | null;
+  roleInTeam?:
+    string | null;
 
   addedBy: string;
 }
 
 
 export interface AssignProjectTeamInput {
+  /*
+   * IMPORTANT:
+   *
+   * This value can initially be:
+   *
+   * - a real projects.id
+   *
+   * OR
+   *
+   * - a production-ready leads.id
+   *
+   * The service resolves it below.
+   */
+
   projectId: string;
 
   teamId: string;
 
-  plannedStartDate?: string | null;
+  plannedStartDate?:
+    string | null;
 
-  plannedEndDate?: string | null;
+  plannedEndDate?:
+    string | null;
 
   assignedBy: string;
 }
 
 
 /*
- * ========================================================
- * GET ALL TEAMS
- * ========================================================
+ * =========================================================
+ * GET TEAMS
+ * =========================================================
  */
 
 export const getTeams =
@@ -90,10 +109,12 @@ export const getTeams =
 
 
     if (error) {
+
       console.error(
         "GET TEAMS ERROR:",
         error
       );
+
 
       throw new Error(
         `Unable to load teams: ${error.message}`
@@ -101,19 +122,23 @@ export const getTeams =
     }
 
 
-    return data;
+    return (
+      data ??
+      []
+    );
   };
 
 
 /*
- * ========================================================
+ * =========================================================
  * CREATE TEAM
- * ========================================================
+ * =========================================================
  */
 
 export const createTeam =
   async (
-    input: CreateTeamInput
+    input:
+      CreateTeamInput
   ) => {
 
     const {
@@ -127,7 +152,7 @@ export const createTeam =
             input.name,
 
           description:
-            input.description ||
+            input.description ??
             null,
 
           created_by:
@@ -137,14 +162,22 @@ export const createTeam =
         .single();
 
 
-    if (error) {
+    if (
+      error ||
+      !data
+    ) {
+
       console.error(
         "CREATE TEAM ERROR:",
         error
       );
 
+
       throw new Error(
-        `Unable to create team: ${error.message}`
+        `Unable to create team: ${
+          error?.message ||
+          "Unknown database error"
+        }`
       );
     }
 
@@ -154,25 +187,32 @@ export const createTeam =
 
 
 /*
- * ========================================================
+ * =========================================================
  * UPDATE TEAM
- * ========================================================
+ * =========================================================
  */
 
 export const updateTeam =
   async (
     teamId: string,
-    input: UpdateTeamInput
+
+    input:
+      UpdateTeamInput
   ) => {
 
     const updates:
-      Record<string, unknown> =
+      Record<
+        string,
+        unknown
+      > =
       {};
 
 
     if (
-      input.name !== undefined
+      input.name !==
+      undefined
     ) {
+
       updates.name =
         input.name;
     }
@@ -182,8 +222,45 @@ export const updateTeam =
       input.description !==
       undefined
     ) {
+
       updates.description =
         input.description;
+    }
+
+
+    if (
+      Object.keys(
+        updates
+      ).length ===
+      0
+    ) {
+
+      const {
+        data,
+        error,
+      } =
+        await supabaseAdmin
+          .from("teams")
+          .select()
+          .eq(
+            "id",
+            teamId
+          )
+          .single();
+
+
+      if (
+        error ||
+        !data
+      ) {
+
+        throw new Error(
+          "Team not found"
+        );
+      }
+
+
+      return data;
     }
 
 
@@ -193,7 +270,9 @@ export const updateTeam =
     } =
       await supabaseAdmin
         .from("teams")
-        .update(updates)
+        .update(
+          updates
+        )
         .eq(
           "id",
           teamId
@@ -202,14 +281,22 @@ export const updateTeam =
         .single();
 
 
-    if (error) {
+    if (
+      error ||
+      !data
+    ) {
+
       console.error(
         "UPDATE TEAM ERROR:",
         error
       );
 
+
       throw new Error(
-        `Unable to update team: ${error.message}`
+        `Unable to update team: ${
+          error?.message ||
+          "Unknown database error"
+        }`
       );
     }
 
@@ -219,11 +306,9 @@ export const updateTeam =
 
 
 /*
- * ========================================================
- * GET AVAILABLE TEAM MEMBER USERS
- *
- * Only active users with team_member CRM role.
- * ========================================================
+ * =========================================================
+ * AVAILABLE TEAM MEMBER USERS
+ * =========================================================
  */
 
 export const getAvailableTeamMemberUsers =
@@ -240,7 +325,8 @@ export const getAvailableTeamMemberUsers =
           full_name,
           email,
           role,
-          is_active
+          is_active,
+          availability_status
         `)
         .eq(
           "role",
@@ -259,10 +345,12 @@ export const getAvailableTeamMemberUsers =
 
 
     if (error) {
+
       console.error(
         "GET TEAM MEMBER USERS ERROR:",
         error
       );
+
 
       throw new Error(
         `Unable to load team members: ${error.message}`
@@ -270,29 +358,40 @@ export const getAvailableTeamMemberUsers =
     }
 
 
-    return data;
+    return (
+      data ??
+      []
+    );
   };
 
 
 /*
- * ========================================================
+ * =========================================================
  * ADD MEMBER TO TEAM
- * ========================================================
+ *
+ * Idempotent:
+ *
+ * if member already belongs to the team,
+ * return the existing membership instead of failing.
+ * =========================================================
  */
 
 export const addTeamMember =
   async (
-    input: AddTeamMemberInput
+    input:
+      AddTeamMemberInput
   ) => {
 
     /*
-     * Verify that this user is an
-     * active Team Member.
+     * Verify profile.
      */
 
     const {
-      data: profile,
-      error: profileError,
+      data:
+        profile,
+
+      error:
+        profileError,
     } =
       await supabaseAdmin
         .from("profiles")
@@ -305,13 +404,14 @@ export const addTeamMember =
           "id",
           input.userId
         )
-        .single();
+        .maybeSingle();
 
 
     if (
       profileError ||
       !profile
     ) {
+
       throw new Error(
         "Team member user not found"
       );
@@ -320,28 +420,45 @@ export const addTeamMember =
 
     if (
       profile.role !==
-        "team_member" ||
-      !profile.is_active
+        "team_member"
     ) {
+
       throw new Error(
-        "Only active Team Member users can be added to teams"
+        "Only Team Member users can be added to teams"
+      );
+    }
+
+
+    if (
+      profile.is_active ===
+      false
+    ) {
+
+      throw new Error(
+        "Inactive Team Member cannot be added to a team"
       );
     }
 
 
     /*
-     * Check for duplicate membership.
+     * Check existing membership.
      */
 
     const {
-      data: existing,
-      error: existingError,
+      data:
+        existing,
+
+      error:
+        existingError,
     } =
       await supabaseAdmin
         .from("team_members")
         .select(`
           team_id,
-          user_id
+          user_id,
+          role_in_team,
+          added_by,
+          added_at
         `)
         .eq(
           "team_id",
@@ -354,17 +471,25 @@ export const addTeamMember =
         .maybeSingle();
 
 
-    if (existingError) {
+    if (
+      existingError
+    ) {
+
       throw new Error(
         `Unable to check team membership: ${existingError.message}`
       );
     }
 
 
-    if (existing) {
-      throw new Error(
-        "This user is already a member of the selected team"
-      );
+    /*
+     * Already there = valid.
+     */
+
+    if (
+      existing
+    ) {
+
+      return existing;
     }
 
 
@@ -382,7 +507,7 @@ export const addTeamMember =
             input.userId,
 
           role_in_team:
-            input.roleInTeam ||
+            input.roleInTeam ??
             null,
 
           added_by:
@@ -392,14 +517,22 @@ export const addTeamMember =
         .single();
 
 
-    if (error) {
+    if (
+      error ||
+      !data
+    ) {
+
       console.error(
         "ADD TEAM MEMBER ERROR:",
         error
       );
 
+
       throw new Error(
-        `Unable to add team member: ${error.message}`
+        `Unable to add team member: ${
+          error?.message ||
+          "Unknown database error"
+        }`
       );
     }
 
@@ -409,14 +542,15 @@ export const addTeamMember =
 
 
 /*
- * ========================================================
- * REMOVE MEMBER FROM TEAM
- * ========================================================
+ * =========================================================
+ * REMOVE MEMBER
+ * =========================================================
  */
 
 export const removeTeamMember =
   async (
     teamId: string,
+
     userId: string
   ) => {
 
@@ -436,11 +570,9 @@ export const removeTeamMember =
         );
 
 
-    if (error) {
-      console.error(
-        "REMOVE TEAM MEMBER ERROR:",
-        error
-      );
+    if (
+      error
+    ) {
 
       throw new Error(
         `Unable to remove team member: ${error.message}`
@@ -450,11 +582,9 @@ export const removeTeamMember =
 
 
 /*
- * ========================================================
- * GET APPROVED LEAD BOARD PROJECTS
- *
- * These are the projects available for team allocation.
- * ========================================================
+ * =========================================================
+ * PROJECTS AVAILABLE FOR TEAM ALLOCATION
+ * =========================================================
  */
 
 export const getProjectsForTeamAllocation =
@@ -472,6 +602,7 @@ export const getProjectsForTeamAllocation =
           name,
           description,
           status,
+          completion_review_status,
           planned_start_date,
           planned_end_date,
           actual_start_date,
@@ -521,11 +652,15 @@ export const getProjectsForTeamAllocation =
         );
 
 
-    if (error) {
+    if (
+      error
+    ) {
+
       console.error(
         "GET PROJECTS FOR ALLOCATION ERROR:",
         error
       );
+
 
       throw new Error(
         `Unable to load projects for team allocation: ${error.message}`
@@ -533,65 +668,444 @@ export const getProjectsForTeamAllocation =
     }
 
 
-    return data;
+    return (
+      data ??
+      []
+    );
   };
 
 
 /*
- * ========================================================
- * ASSIGN / CHANGE TEAM FOR PROJECT
+ * =========================================================
+ * ASSIGN PROJECT / LEAD TO TEAM
  *
- * One project has one active team for this sprint.
+ * CRITICAL CONNECTION:
  *
- * If a project already has a team, remove that allocation
- * first and replace it with the newly selected team.
- * ========================================================
+ * If :projectId is actually a lead ID,
+ * create the projects row first.
+ *
+ * This is what connects:
+ *
+ * lead
+ *   ↓
+ * projects
+ *   ↓
+ * project_teams
+ *   ↓
+ * team_members
+ *   ↓
+ * Team Progress
+ * =========================================================
  */
 
 export const assignProjectToTeam =
   async (
-    input: AssignProjectTeamInput
+    input:
+      AssignProjectTeamInput
   ) => {
 
     /*
-     * Verify project exists.
+     * -----------------------------------------------------
+     * CHECK IF ID IS ALREADY A PROJECT
+     * -----------------------------------------------------
      */
 
     const {
-      data: project,
-      error: projectError,
+      data:
+        existingProject,
+
+      error:
+        existingProjectError,
     } =
       await supabaseAdmin
         .from("projects")
         .select(`
           id,
           lead_id,
+          name,
           status
         `)
         .eq(
           "id",
           input.projectId
         )
-        .single();
+        .maybeSingle();
 
 
     if (
-      projectError ||
+      existingProjectError
+    ) {
+
+      throw new Error(
+        `Unable to check project: ${existingProjectError.message}`
+      );
+    }
+
+
+    let project:
+      {
+        id: string;
+
+        lead_id: string;
+
+        name: string;
+
+        status: string;
+      } |
+      null =
+      existingProject;
+
+
+    /*
+     * -----------------------------------------------------
+     * NO PROJECT?
+     *
+     * Treat received UUID as leads.id.
+     * -----------------------------------------------------
+     */
+
+    if (
       !project
     ) {
+
+      const {
+        data:
+          lead,
+
+        error:
+          leadError,
+      } =
+        await supabaseAdmin
+          .from("leads")
+          .select(`
+            id,
+            title,
+            temperature,
+            workflow_stage
+          `)
+          .eq(
+            "id",
+            input.projectId
+          )
+          .maybeSingle();
+
+
+      if (
+        leadError
+      ) {
+
+        throw new Error(
+          `Unable to load lead for allocation: ${leadError.message}`
+        );
+      }
+
+
+      if (
+        !lead
+      ) {
+
+        throw new Error(
+          "Lead not found for team allocation"
+        );
+      }
+
+
+      /*
+       * Financial approval.
+       */
+
+      const {
+        data:
+          financialReview,
+
+        error:
+          financialError,
+      } =
+        await supabaseAdmin
+          .from(
+            "financial_reviews"
+          )
+          .select(`
+            lead_id,
+            decision
+          `)
+          .eq(
+            "lead_id",
+            lead.id
+          )
+          .maybeSingle();
+
+
+      if (
+        financialError
+      ) {
+
+        throw new Error(
+          `Unable to verify Financial Review: ${financialError.message}`
+        );
+      }
+
+
+      if (
+        !financialReview ||
+        financialReview
+          .decision !==
+          "approved"
+      ) {
+
+        throw new Error(
+          "Lead is not financially approved"
+        );
+      }
+
+
+      /*
+       * Technical approval.
+       */
+
+      const {
+        data:
+          technicalReview,
+
+        error:
+          technicalError,
+      } =
+        await supabaseAdmin
+          .from(
+            "technical_reviews"
+          )
+          .select(`
+            lead_id,
+            decision
+          `)
+          .eq(
+            "lead_id",
+            lead.id
+          )
+          .maybeSingle();
+
+
+      if (
+        technicalError
+      ) {
+
+        throw new Error(
+          `Unable to verify Technical Review: ${technicalError.message}`
+        );
+      }
+
+
+      if (
+        !technicalReview ||
+        technicalReview
+          .decision !==
+          "approved"
+      ) {
+
+        throw new Error(
+          "Lead is not technically approved"
+        );
+      }
+
+
+      /*
+       * Keep old lead tag in sync.
+       */
+
+      const {
+        error:
+          temperatureError,
+      } =
+        await supabaseAdmin
+          .from("leads")
+          .update({
+            temperature:
+              "hot",
+          })
+          .eq(
+            "id",
+            lead.id
+          );
+
+
+      if (
+        temperatureError
+      ) {
+
+        console.warn(
+          "UPDATE LEAD TEMPERATURE WARNING:",
+          temperatureError
+        );
+      }
+
+
+      /*
+       * See if lead already has project.
+       */
+
+      const {
+        data:
+          existingLeadProjects,
+
+        error:
+          leadProjectError,
+      } =
+        await supabaseAdmin
+          .from("projects")
+          .select(`
+            id,
+            lead_id,
+            name,
+            status
+          `)
+          .eq(
+            "lead_id",
+            lead.id
+          )
+          .order(
+            "created_at",
+            {
+              ascending:
+                false,
+            }
+          )
+          .limit(1);
+
+
+      if (
+        leadProjectError
+      ) {
+
+        throw new Error(
+          `Unable to check lead project: ${leadProjectError.message}`
+        );
+      }
+
+
+      if (
+        existingLeadProjects &&
+        existingLeadProjects
+          .length >
+          0
+      ) {
+
+        project =
+          existingLeadProjects[0];
+
+      } else {
+
+        /*
+         * CREATE DELIVERY PROJECT.
+         */
+
+        const {
+          data:
+            newProject,
+
+          error:
+            projectCreateError,
+        } =
+          await supabaseAdmin
+            .from("projects")
+            .insert({
+              lead_id:
+                lead.id,
+
+              name:
+                lead.title ||
+                "Untitled Project",
+
+              description:
+                null,
+
+              status:
+                "pending",
+
+              planned_start_date:
+                input
+                  .plannedStartDate ??
+                null,
+
+              planned_end_date:
+                input
+                  .plannedEndDate ??
+                null,
+
+              created_by:
+                input.assignedBy,
+
+              completion_review_status:
+                "not_submitted",
+            })
+            .select(`
+              id,
+              lead_id,
+              name,
+              status
+            `)
+            .single();
+
+
+        if (
+          projectCreateError ||
+          !newProject
+        ) {
+
+          console.error(
+            "CREATE DELIVERY PROJECT ERROR:",
+            projectCreateError
+          );
+
+
+          throw new Error(
+            `Unable to create delivery project: ${
+              projectCreateError
+                ?.message ||
+              "Unknown database error"
+            }`
+          );
+        }
+
+
+        project =
+          newProject;
+      }
+    }
+
+
+    if (
+      !project
+    ) {
+
       throw new Error(
-        "Approved Lead Board project not found"
+        "Unable to resolve delivery project"
+      );
+    }
+
+
+    if (
+      project.status ===
+      "done"
+    ) {
+
+      throw new Error(
+        "Completed project cannot be reallocated"
       );
     }
 
 
     /*
-     * Verify team exists.
+     * -----------------------------------------------------
+     * VERIFY TEAM
+     * -----------------------------------------------------
      */
 
     const {
-      data: team,
-      error: teamError,
+      data:
+        team,
+
+      error:
+        teamError,
     } =
       await supabaseAdmin
         .from("teams")
@@ -603,13 +1117,23 @@ export const assignProjectToTeam =
           "id",
           input.teamId
         )
-        .single();
+        .maybeSingle();
 
 
     if (
-      teamError ||
+      teamError
+    ) {
+
+      throw new Error(
+        `Unable to verify team: ${teamError.message}`
+      );
+    }
+
+
+    if (
       !team
     ) {
+
       throw new Error(
         "Selected team does not exist"
       );
@@ -617,108 +1141,189 @@ export const assignProjectToTeam =
 
 
     /*
-     * Remove previous team allocation.
-     *
-     * This allows Senior Manager to
-     * change the assigned team later.
+     * -----------------------------------------------------
+     * VERIFY TEAM HAS MEMBERS
+     * -----------------------------------------------------
      */
 
     const {
-      error: deleteError,
+      data:
+        members,
+
+      error:
+        memberError,
+    } =
+      await supabaseAdmin
+        .from("team_members")
+        .select(`
+          team_id,
+          user_id
+        `)
+        .eq(
+          "team_id",
+          team.id
+        );
+
+
+    if (
+      memberError
+    ) {
+
+      throw new Error(
+        `Unable to verify team members: ${memberError.message}`
+      );
+    }
+
+
+    if (
+      !members ||
+      members.length ===
+        0
+    ) {
+
+      throw new Error(
+        "Selected team does not contain any team members"
+      );
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * ONE ACTIVE TEAM PER PROJECT
+     * -----------------------------------------------------
+     */
+
+    const {
+      error:
+        removeOldAllocationError,
     } =
       await supabaseAdmin
         .from("project_teams")
         .delete()
         .eq(
           "project_id",
-          input.projectId
+          project.id
         );
 
 
-    if (deleteError) {
+    if (
+      removeOldAllocationError
+    ) {
+
       throw new Error(
-        `Unable to replace existing team allocation: ${deleteError.message}`
+        `Unable to replace previous allocation: ${removeOldAllocationError.message}`
       );
     }
 
 
     /*
-     * Create new allocation.
+     * -----------------------------------------------------
+     * CREATE PROJECT ↔ TEAM CONNECTION
+     * -----------------------------------------------------
      */
 
     const {
-      error: allocationError,
+      data:
+        allocation,
+
+      error:
+        allocationError,
     } =
       await supabaseAdmin
         .from("project_teams")
         .insert({
           project_id:
-            input.projectId,
+            project.id,
 
           team_id:
-            input.teamId,
+            team.id,
 
           assigned_by:
             input.assignedBy,
-        });
+        })
+        .select(`
+          project_id,
+          team_id,
+          assigned_by,
+          assigned_at
+        `)
+        .single();
 
 
-    if (allocationError) {
+    if (
+      allocationError ||
+      !allocation
+    ) {
+
       console.error(
         "PROJECT TEAM ALLOCATION ERROR:",
         allocationError
       );
 
+
       throw new Error(
-        `Unable to allocate team: ${allocationError.message}`
+        `Unable to connect project to team: ${
+          allocationError
+            ?.message ||
+          "Unknown database error"
+        }`
       );
     }
 
 
     /*
-     * Update timeline and board status.
+     * -----------------------------------------------------
+     * UPDATE PROJECT
+     * -----------------------------------------------------
      */
 
-    const projectUpdates:
-      Record<string, unknown> =
-      {
-        status:
-          "assigned",
-      };
-
-
-    if (
-      input.plannedStartDate !==
-      undefined
-    ) {
-      projectUpdates
-        .planned_start_date =
-          input.plannedStartDate;
-    }
-
-
-    if (
-      input.plannedEndDate !==
-      undefined
-    ) {
-      projectUpdates
-        .planned_end_date =
-          input.plannedEndDate;
-    }
-
-
     const {
-      data: updatedProject,
-      error: updateError,
+      data:
+        updatedProject,
+
+      error:
+        updateError,
     } =
       await supabaseAdmin
         .from("projects")
-        .update(
-          projectUpdates
-        )
+        .update({
+          status:
+            "assigned",
+
+          planned_start_date:
+            input
+              .plannedStartDate ??
+            null,
+
+          planned_end_date:
+            input
+              .plannedEndDate ??
+            null,
+
+          completion_review_status:
+            "not_submitted",
+
+          team_completed_at:
+            null,
+
+          team_completed_by:
+            null,
+
+          senior_reviewed_at:
+            null,
+
+          senior_reviewed_by:
+            null,
+
+          senior_review_notes:
+            null,
+
+          final_update_at:
+            null,
+        })
         .eq(
           "id",
-          input.projectId
+          project.id
         )
         .select(`
           id,
@@ -728,66 +1333,111 @@ export const assignProjectToTeam =
           status,
           planned_start_date,
           planned_end_date,
+          completion_review_status,
+          created_at,
           updated_at
         `)
         .single();
 
 
-    if (updateError) {
+    if (
+      updateError ||
+      !updatedProject
+    ) {
+
       throw new Error(
-        `Team was allocated but project timeline could not be updated: ${updateError.message}`
+        `Unable to update allocated project: ${
+          updateError
+            ?.message ||
+          "Unknown database error"
+        }`
       );
     }
 
 
     /*
-     * Activity history.
+     * Activity is non-critical.
      */
 
-    await supabaseAdmin
-      .from("activities")
-      .insert({
-        user_id:
-          input.assignedBy,
+    const {
+      error:
+        activityError,
+    } =
+      await supabaseAdmin
+        .from("activities")
+        .insert({
+          user_id:
+            input.assignedBy,
 
-        entity_type:
-          "project",
+          entity_type:
+            "project",
 
-        entity_id:
-          input.projectId,
+          entity_id:
+            project.id,
 
-        action:
-          "team_assigned",
+          action:
+            "team_assigned",
 
-        description:
-          `Project assigned to team ${team.name}`,
+          description:
+            `Project assigned to team ${team.name}`,
 
-        metadata: {
-          teamId:
-            team.id,
+          metadata: {
+            teamId:
+              team.id,
 
-          teamName:
-            team.name,
+            teamName:
+              team.name,
 
-          plannedStartDate:
-            input.plannedStartDate,
+            leadId:
+              updatedProject
+                .lead_id,
 
-          plannedEndDate:
-            input.plannedEndDate,
-        },
-      });
+            plannedStartDate:
+              input
+                .plannedStartDate,
+
+            plannedEndDate:
+              input
+                .plannedEndDate,
+          },
+        });
 
 
-    return updatedProject;
+    if (
+      activityError
+    ) {
+
+      console.warn(
+        "TEAM ALLOCATION ACTIVITY WARNING:",
+        activityError
+      );
+    }
+
+
+    return {
+      ...updatedProject,
+
+      project_team:
+        allocation,
+
+      allocated_team: {
+        id:
+          team.id,
+
+        name:
+          team.name,
+
+        members:
+          members,
+      },
+    };
   };
 
 
 /*
- * ========================================================
- * GET TEAM-ASSIGNED LEADS / PROJECTS
- *
- * Optional teamId enables filtering.
- * ========================================================
+ * =========================================================
+ * TEAM ASSIGNED PROJECTS
+ * =========================================================
  */
 
 export const getTeamAssignedProjects =
@@ -816,6 +1466,7 @@ export const getTeamAssignedProjects =
             name,
             description,
             status,
+            completion_review_status,
             planned_start_date,
             planned_end_date,
             actual_start_date,
@@ -846,12 +1497,16 @@ export const getTeamAssignedProjects =
         .order(
           "assigned_at",
           {
-            ascending: false,
+            ascending:
+              false,
           }
         );
 
 
-    if (teamId) {
+    if (
+      teamId
+    ) {
+
       query =
         query.eq(
           "team_id",
@@ -867,17 +1522,24 @@ export const getTeamAssignedProjects =
       await query;
 
 
-    if (error) {
+    if (
+      error
+    ) {
+
       console.error(
         "GET TEAM ASSIGNED PROJECTS ERROR:",
         error
       );
 
+
       throw new Error(
-        `Unable to load team assigned leads: ${error.message}`
+        `Unable to load team assigned projects: ${error.message}`
       );
     }
 
 
-    return data;
+    return (
+      data ??
+      []
+    );
   };

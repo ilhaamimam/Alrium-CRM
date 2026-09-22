@@ -79,3 +79,99 @@
       1fr;
   }
 }
+
+/*
+ * =========================================================
+ * CONNECTED PIPELINE BADGES
+ * =========================================================
+ */
+
+.lead-temperature-hot,
+.lead-temperature-cold,
+.pipeline-review-badge,
+.pipeline-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  font-size: 0.7rem;
+  font-weight: 900;
+
+  white-space: nowrap;
+}
+
+
+/* HOT */
+
+.lead-temperature-hot {
+  background: #ff7900;
+
+  color: #ffffff;
+
+  border:
+    1px solid #ff7900;
+}
+
+
+/* COLD */
+
+.lead-temperature-cold {
+  background: #fff2e8;
+
+  color: #d85f00;
+
+  border:
+    1px solid #ffc18f;
+}
+
+
+/* PENDING */
+
+.pipeline-review-pending {
+  background: #f3f3f3;
+
+  color: #666666;
+
+  border:
+    1px solid #dddddd;
+}
+
+
+/* APPROVED */
+
+.pipeline-review-approved {
+  background: #111111;
+
+  color: #ffffff;
+
+  border:
+    1px solid #111111;
+}
+
+
+/* REJECTED */
+
+.pipeline-review-rejected {
+  background: #fff0e6;
+
+  color: #b74400;
+
+  border:
+    1px solid #ff9e59;
+}
+
+
+/* PIPELINE STAGE */
+
+.pipeline-stage-badge {
+  background: #f7f7f7;
+
+  color: #333333;
+
+  border:
+    1px solid #dedede;
+}

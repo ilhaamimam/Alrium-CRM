@@ -1,38 +1,52 @@
 export interface ContactCompany {
   id: string;
+
   name: string;
 }
+
 
 export interface Contact {
   id: string;
 
-  company_id: string | null;
+  company_id:
+    string | null;
 
-  first_name: string;
+  first_name:
+    string;
 
-  last_name: string | null;
+  last_name:
+    string | null;
 
-  email: string | null;
+  email:
+    string | null;
 
-  phone: string | null;
+  phone:
+    string | null;
 
-  job_title: string | null;
+  job_title:
+    string | null;
 
-  notes: string | null;
+  notes:
+    string | null;
 
-  archived_at: string | null;
+  created_by:
+    string | null;
 
-  created_at: string;
+  created_at?: string;
 
-  updated_at: string;
+  updated_at?: string;
 
-  companies?: ContactCompany | null;
+  companies?:
+    ContactCompany | null;
 }
 
-export interface CreateContactInput {
-  companyId?: string | null;
 
-  firstName: string;
+export interface CreateContactInput {
+  companyId:
+    string | null;
+
+  firstName:
+    string;
 
   lastName?: string;
 
@@ -45,18 +59,26 @@ export interface CreateContactInput {
   notes?: string;
 }
 
+
 export interface UpdateContactInput {
-  companyId?: string | null;
+  companyId?:
+    string | null;
 
-  firstName?: string;
+  firstName?:
+    string;
 
-  lastName?: string | null;
+  lastName?:
+    string;
 
-  email?: string | null;
+  email?:
+    string;
 
-  phone?: string | null;
+  phone?:
+    string;
 
-  jobTitle?: string | null;
+  jobTitle?:
+    string;
 
-  notes?: string | null;
+  notes?:
+    string;
 }

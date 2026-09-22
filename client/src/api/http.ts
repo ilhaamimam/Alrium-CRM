@@ -5,27 +5,43 @@ import {
 } from "../lib/supabase";
 
 
-const apiUrl =
+const baseURL =
   import.meta.env
-    .VITE_API_URL;
+    .VITE_API_URL ||
+  "http://localhost:4000/api";
 
 
-if (!apiUrl) {
-  throw new Error(
-    "Missing VITE_API_URL"
-  );
-}
+console.log(
+  "CRM API BASE URL:",
+  baseURL
+);
 
 
 export const api =
   axios.create({
-    baseURL:
-      apiUrl,
+    baseURL,
+
+    headers: {
+      Accept:
+        "application/json",
+
+      "Content-Type":
+        "application/json",
+    },
   });
 
 
+/*
+ * =========================================================
+ * AUTH TOKEN
+ * =========================================================
+ */
+
 api.interceptors.request.use(
-  async (config) => {
+  async (
+    config
+  ) => {
+
     const {
       data: {
         session,
@@ -43,6 +59,20 @@ api.interceptors.request.use(
     }
 
 
+    /*
+     * IMPORTANT
+     *
+     * We must return the same config.
+     */
     return config;
+  },
+
+
+  (
+    error
+  ) => {
+    return Promise.reject(
+      error
+    );
   }
 );

@@ -1,94 +1,441 @@
-.team-management-grid {
+/*
+ * =========================================================
+ * TEAM ALLOCATION SUMMARY
+ * =========================================================
+ */
+
+.allocation-summary-grid {
   display: grid;
 
   grid-template-columns:
-    repeat(
-      2,
-      minmax(
-        0,
-        1fr
-      )
-    );
+    repeat(4, minmax(0, 1fr));
 
-  gap: 22px;
+  gap: 16px;
+
+  margin-bottom: 24px;
 }
 
 
-.team-management-section {
+.allocation-summary-card {
+  padding: 20px;
+
+  border:
+    1px solid #e7e7e7;
+
+  border-radius: 18px;
+
+  background: #ffffff;
+}
+
+
+.allocation-summary-card span {
+  display: block;
+
+  margin-bottom: 10px;
+
+  color: #777777;
+
+  font-size: 0.72rem;
+
+  font-weight: 900;
+
+  letter-spacing: 0.05em;
+
+  text-transform: uppercase;
+}
+
+
+.allocation-summary-card strong {
+  color: #111111;
+
+  font-size: 2rem;
+}
+
+
+.allocation-summary-accent {
+  border-top:
+    4px solid #ff7900;
+}
+
+
+/*
+ * =========================================================
+ * LAYOUT
+ * =========================================================
+ */
+
+.allocation-layout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    minmax(340px, 0.85fr);
+
+  gap: 22px;
+
+  align-items: start;
+
+  margin-bottom: 24px;
+}
+
+
+.allocation-form-card,
+.allocation-members-card {
   min-width: 0;
 }
 
 
-.team-filter {
+/*
+ * =========================================================
+ * SELECTED LEAD
+ * =========================================================
+ */
+
+.allocation-selected-lead {
+  padding: 16px;
+
+  margin-bottom: 20px;
+
+  border:
+    1px solid #ffc18f;
+
+  border-radius: 15px;
+
+  background: #fff7f0;
+}
+
+
+.allocation-selected-lead strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #111111;
+}
+
+
+.allocation-lead-meta {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-top: 14px;
+}
+
+
+.allocation-lead-meta span {
+  color: #666666;
+
+  font-size: 0.82rem;
+}
+
+
+.allocation-hot {
+  display: inline !important;
+
+  color: #ff7900 !important;
+}
+
+
+/*
+ * =========================================================
+ * LABELS
+ * =========================================================
+ */
+
+.allocation-small-label {
+  color: #ff7900;
+
+  font-size: 0.68rem;
+
+  font-weight: 900;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+}
+
+
+/*
+ * =========================================================
+ * DATE GRID
+ * =========================================================
+ */
+
+.allocation-date-grid {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 14px;
+}
+
+
+/*
+ * =========================================================
+ * SAVE
+ * =========================================================
+ */
+
+.allocation-save-button {
+  width: 100%;
+
+  margin-top: 10px;
+
+  background: #111111;
+
+  border:
+    1px solid #111111;
+
+  color: #ffffff;
+}
+
+
+.allocation-save-button:hover {
+  background: #ff7900;
+
+  border-color: #ff7900;
+}
+
+
+/*
+ * =========================================================
+ * MEMBERS
+ * =========================================================
+ */
+
+.allocation-section-header {
   display: flex;
 
-  align-items: flex-end;
+  align-items: flex-start;
 
-  gap: 12px;
+  justify-content: space-between;
+
+  gap: 16px;
 
   margin-bottom: 18px;
 }
 
 
-.team-filter .form-group {
-  width:
-    min(
-      330px,
-      100%
-    );
+.allocation-count-badge {
+  min-width: 42px;
+
+  height: 42px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 14px;
+
+  background: #ff7900;
+
+  color: #ffffff;
+
+  font-weight: 900;
 }
 
 
-.team-member-list {
-  margin-top: 20px;
+.allocation-member-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
 }
 
 
-.team-summary {
-  padding: 12px 14px;
+.allocation-member {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 13px;
 
   border:
-    1px solid
-    var(--border);
+    1px solid #e5e5e5;
 
-  border-radius:
-    var(--radius-md);
+  border-radius: 14px;
 
-  background:
-    #fafafa;
+  background: #ffffff;
+
+  color: #111111;
+
+  text-align: left;
 }
 
 
-.team-count {
+.allocation-member:hover {
+  border-color: #ff7900;
+
+  background: #fff8f2;
+}
+
+
+.allocation-member-selected {
+  border-color: #ff7900;
+
+  background: #fff3e8;
+}
+
+
+.allocation-member-avatar {
+  width: 42px;
+
+  height: 42px;
+
+  display: grid;
+
+  flex-shrink: 0;
+
+  place-items: center;
+
+  border-radius: 12px;
+
+  background: #111111;
+
+  color: #ffffff;
+
+  font-weight: 900;
+}
+
+
+.allocation-member-info {
+  min-width: 0;
+
+  flex: 1;
+}
+
+
+.allocation-member-info strong,
+.allocation-member-info span {
+  display: block;
+}
+
+
+.allocation-member-info span {
+  margin-top: 3px;
+
+  color: #777777;
+
+  font-size: 0.76rem;
+}
+
+
+.allocation-member-status {
+  color: #ff7900;
+
+  font-size: 0.7rem;
+
+  font-weight: 900;
+}
+
+
+/*
+ * =========================================================
+ * BADGES
+ * =========================================================
+ */
+
+.allocation-hot-badge,
+.allocation-approved-badge {
   display: inline-flex;
 
   align-items: center;
 
   justify-content: center;
 
-  min-width: 30px;
-  min-height: 30px;
+  padding: 6px 10px;
 
   border-radius: 999px;
 
-  background:
-    var(--orange);
+  font-size: 0.68rem;
 
-  color:
-    #ffffff;
+  font-weight: 900;
 
-  font-size: 0.72rem;
+  text-transform: uppercase;
+}
 
-  font-weight: 850;
+
+.allocation-hot-badge {
+  background: #ff7900;
+
+  color: #ffffff;
+}
+
+
+.allocation-approved-badge {
+  background: #111111;
+
+  color: #ffffff;
+}
+
+
+/*
+ * =========================================================
+ * WARNING
+ * =========================================================
+ */
+
+.allocation-warning-text {
+  margin-top: 7px;
+
+  color: #b74400;
+
+  font-size: 0.78rem;
+}
+
+
+/*
+ * =========================================================
+ * PREVIEW
+ * =========================================================
+ */
+
+.allocation-preview-card {
+  margin-bottom: 24px;
+}
+
+
+/*
+ * =========================================================
+ * RESPONSIVE
+ * =========================================================
+ */
+
+@media (
+  max-width: 1100px
+) {
+
+  .allocation-summary-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+
+  .allocation-layout {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 
 @media (
-  max-width: 1050px
+  max-width: 650px
 ) {
 
-  .team-management-grid {
-    grid-template-columns:
-      1fr;
+  .allocation-summary-grid,
+  .allocation-date-grid,
+  .allocation-lead-meta {
+    grid-template-columns: 1fr;
   }
+
 }

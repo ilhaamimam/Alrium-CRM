@@ -516,3 +516,39 @@
       20px 14px 40px;
   }
 }
+
+/*
+ * =========================================================
+ * SIDEBAR SECTION LABELS
+ * =========================================================
+ */
+
+.sidebar-section {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+
+  margin-bottom: 24px;
+}
+
+
+.sidebar-section-label {
+  display: block;
+
+  margin:
+    0 0 4px 12px;
+
+  color: #6f7782;
+
+  font-size: 0.72rem;
+
+  font-weight: 900;
+
+  line-height: 1;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
+}

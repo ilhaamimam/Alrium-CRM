@@ -1,3 +1,5 @@
+import axios from "axios";
+
 import {
   api,
 } from "../../api/http";
@@ -13,6 +15,12 @@ import type {
 } from "./teamAllocation.types";
 
 
+/*
+ * =========================================================
+ * TEAMS
+ * =========================================================
+ */
+
 export const fetchTeams =
   async (): Promise<
     Team[]
@@ -23,9 +31,19 @@ export const fetchTeams =
         "/teams"
       );
 
-    return response.data.data;
+
+    return (
+      response.data.data ??
+      []
+    );
   };
 
+
+/*
+ * =========================================================
+ * CREATE TEAM
+ * =========================================================
+ */
 
 export const createTeam =
   async (
@@ -39,9 +57,16 @@ export const createTeam =
         input
       );
 
+
     return response.data.data;
   };
 
+
+/*
+ * =========================================================
+ * UPDATE TEAM
+ * =========================================================
+ */
 
 export const updateTeam =
   async (
@@ -60,9 +85,16 @@ export const updateTeam =
         input
       );
 
+
     return response.data.data;
   };
 
+
+/*
+ * =========================================================
+ * AVAILABLE TEAM MEMBERS
+ * =========================================================
+ */
 
 export const fetchAvailableTeamMembers =
   async (): Promise<
@@ -74,9 +106,19 @@ export const fetchAvailableTeamMembers =
         "/team-members/available"
       );
 
-    return response.data.data;
+
+    return (
+      response.data.data ??
+      []
+    );
   };
 
+
+/*
+ * =========================================================
+ * ADD MEMBER TO TEAM
+ * =========================================================
+ */
 
 export const addTeamMember =
   async (
@@ -92,13 +134,21 @@ export const addTeamMember =
         input
       );
 
+
     return response.data.data;
   };
 
 
+/*
+ * =========================================================
+ * REMOVE MEMBER FROM TEAM
+ * =========================================================
+ */
+
 export const removeTeamMember =
   async (
     teamId: string,
+
     userId: string
   ): Promise<void> => {
 
@@ -107,6 +157,12 @@ export const removeTeamMember =
     );
   };
 
+
+/*
+ * =========================================================
+ * PROJECTS READY FOR ALLOCATION
+ * =========================================================
+ */
 
 export const fetchProjectsForAllocation =
   async (): Promise<
@@ -118,9 +174,19 @@ export const fetchProjectsForAllocation =
         "/team-allocation/projects"
       );
 
-    return response.data.data;
+
+    return (
+      response.data.data ??
+      []
+    );
   };
 
+
+/*
+ * =========================================================
+ * ASSIGN TEAM TO PROJECT
+ * =========================================================
+ */
 
 export const assignProjectTeam =
   async (
@@ -136,9 +202,16 @@ export const assignProjectTeam =
         input
       );
 
+
     return response.data.data;
   };
 
+
+/*
+ * =========================================================
+ * ASSIGNED PROJECTS
+ * =========================================================
+ */
 
 export const fetchTeamAssignedProjects =
   async (
@@ -160,5 +233,120 @@ export const fetchTeamAssignedProjects =
         }
       );
 
-    return response.data.data;
+
+    return (
+      response.data.data ??
+      []
+    );
+  };
+
+
+/*
+ * =========================================================
+ * PREPARE / SAVE COMPLETE ALLOCATION
+ *
+ * This helper does TWO things:
+ *
+ * 1. Adds the selected members to the selected team.
+ * 2. Assigns that team to the selected project.
+ *
+ * IMPORTANT:
+ * Creation of the Project Completion Review should happen
+ * on the BACKEND when assignTeam succeeds.
+ * =========================================================
+ */
+
+export const prepareProjectAllocation =
+  async (
+    projectId: string,
+
+    teamId: string,
+
+    memberIds: string[],
+
+    assignment:
+      AssignTeamInput
+  ) => {
+
+    /*
+     * -----------------------------------------------------
+     * 1. ADD SELECTED MEMBERS TO TEAM
+     * -----------------------------------------------------
+     */
+
+    for (
+      const userId
+      of memberIds
+    ) {
+
+      try {
+
+        await addTeamMember(
+          teamId,
+          {
+            userId,
+          } as AddTeamMemberInput
+        );
+
+      } catch (error) {
+
+        /*
+         * If the member is already assigned to this team,
+         * do not stop the entire project allocation.
+         */
+
+        if (
+          axios.isAxiosError(
+            error
+          )
+        ) {
+
+          const status =
+            error.response
+              ?.status;
+
+
+          /*
+           * 409 commonly means:
+           * already exists / duplicate membership.
+           */
+
+          if (
+            status ===
+            409
+          ) {
+
+            console.warn(
+              "TEAM MEMBER ALREADY EXISTS:",
+              userId
+            );
+
+            continue;
+          }
+        }
+
+
+        /*
+         * Any other error is important.
+         */
+
+        throw error;
+      }
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * 2. ASSIGN TEAM TO PROJECT
+     * -----------------------------------------------------
+     */
+
+    const allocation =
+      await assignProjectTeam(
+        projectId,
+        assignment
+      );
+
+
+    return allocation;
   };

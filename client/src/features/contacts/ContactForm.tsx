@@ -7,16 +7,12 @@ import {
 } from "react";
 
 import {
-  createContact,
-} from "./contact.api";
-
-import {
   fetchCompanies,
 } from "../companies/company.api";
 
-import type {
-  Company,
-} from "../companies/company.types";
+import {
+  createContact,
+} from "./contact.api";
 
 
 interface Props {
@@ -24,14 +20,40 @@ interface Props {
 }
 
 
+interface CompanyOption {
+  id: string;
+  name: string;
+}
+
+
 export default function ContactForm({
   onCreated,
 }: Props) {
+  /*
+   * =========================================================
+   * COMPANY LIST
+   * =========================================================
+   */
+
   const [
     companies,
     setCompanies,
   ] =
-    useState<Company[]>([]);
+    useState<CompanyOption[]>([]);
+
+
+  const [
+    loadingCompanies,
+    setLoadingCompanies,
+  ] =
+    useState(true);
+
+
+  /*
+   * =========================================================
+   * FORM VALUES
+   * =========================================================
+   */
 
   const [
     companyId,
@@ -39,11 +61,13 @@ export default function ContactForm({
   ] =
     useState("");
 
+
   const [
     firstName,
     setFirstName,
   ] =
     useState("");
+
 
   const [
     lastName,
@@ -51,11 +75,20 @@ export default function ContactForm({
   ] =
     useState("");
 
-  const [email, setEmail] =
+
+  const [
+    email,
+    setEmail,
+  ] =
     useState("");
 
-  const [phone, setPhone] =
+
+  const [
+    phone,
+    setPhone,
+  ] =
     useState("");
+
 
   const [
     jobTitle,
@@ -63,15 +96,46 @@ export default function ContactForm({
   ] =
     useState("");
 
-  const [notes, setNotes] =
+
+  const [
+    notes,
+    setNotes,
+  ] =
     useState("");
 
-  const [loading, setLoading] =
+
+  /*
+   * =========================================================
+   * UI STATE
+   * =========================================================
+   */
+
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(false);
 
-  const [error, setError] =
+
+  const [
+    error,
+    setError,
+  ] =
     useState("");
 
+
+  const [
+    success,
+    setSuccess,
+  ] =
+    useState("");
+
+
+  /*
+   * =========================================================
+   * LOAD COMPANIES
+   * =========================================================
+   */
 
   useEffect(() => {
     const loadCompanies =
@@ -80,46 +144,86 @@ export default function ContactForm({
           const data =
             await fetchCompanies();
 
-          setCompanies(data);
+
+          setCompanies(
+            data
+          );
+
         } catch (error) {
           console.error(
+            "LOAD COMPANIES ERROR:",
             error
+          );
+
+        } finally {
+          setLoadingCompanies(
+            false
           );
         }
       };
 
-    loadCompanies();
+
+    void loadCompanies();
+
   }, []);
 
 
-  const handleSubmit = async (
-    event:
-      FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
+  /*
+   * =========================================================
+   * CREATE CONTACT
+   * =========================================================
+   */
 
-    setError("");
-
-
-    if (!firstName.trim()) {
-      setError(
-        "First name is required"
-      );
-
-      return;
-    }
+  const handleSubmit =
+    async (
+      event:
+        FormEvent<HTMLFormElement>
+    ) => {
+      event.preventDefault();
 
 
-    setLoading(true);
+      if (loading) {
+        return;
+      }
 
 
-    try {
-      await createContact({
+      setError("");
+      setSuccess("");
+
+
+      /*
+       * -----------------------------------------
+       * VALIDATE FIRST NAME
+       * -----------------------------------------
+       */
+
+      const cleanFirstName =
+        firstName.trim();
+
+
+      if (!cleanFirstName) {
+        setError(
+          "First name is required"
+        );
+
+        return;
+      }
+
+
+      /*
+       * -----------------------------------------
+       * CREATE EXACT API PAYLOAD
+       * -----------------------------------------
+       */
+
+      const payload = {
         companyId:
-          companyId || null,
+          companyId.trim()
+            ? companyId.trim()
+            : null,
 
         firstName:
-          firstName.trim(),
+          cleanFirstName,
 
         lastName:
           lastName.trim(),
@@ -135,51 +239,149 @@ export default function ContactForm({
 
         notes:
           notes.trim(),
-      });
+      };
 
 
-      setCompanyId("");
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setPhone("");
-      setJobTitle("");
-      setNotes("");
+      console.log(
+        "================================="
+      );
 
+      console.log(
+        "CONTACT FORM PAYLOAD:"
+      );
 
-      onCreated();
+      console.log(
+        payload
+      );
 
-    } catch (error) {
-      console.error(
-        "CREATE CONTACT ERROR:",
-        error
+      console.log(
+        "FIRST NAME FROM FORM:",
+        payload.firstName
+      );
+
+      console.log(
+        "================================="
       );
 
 
-      if (
-        axios.isAxiosError(error)
-      ) {
-        setError(
-          error.response?.data?.message ||
+      setLoading(true);
+
+
+      try {
+        /*
+         * IMPORTANT:
+         *
+         * The payload object MUST be passed
+         * into createContact().
+         */
+
+        const createdContact =
+          await createContact(
+            payload
+          );
+
+
+        console.log(
+          "CONTACT CREATED:",
+          createdContact
+        );
+
+
+        setSuccess(
+          "Contact created successfully"
+        );
+
+
+        /*
+         * Clear form after success.
+         */
+
+        setCompanyId("");
+
+        setFirstName("");
+
+        setLastName("");
+
+        setEmail("");
+
+        setPhone("");
+
+        setJobTitle("");
+
+        setNotes("");
+
+
+        /*
+         * Reload Contact Directory.
+         */
+
+        await onCreated();
+
+      } catch (error) {
+        console.error(
+          "CREATE CONTACT ERROR:",
+          error
+        );
+
+
+        if (
+          axios.isAxiosError(
+            error
+          )
+        ) {
+          console.error(
+            "CONTACT API STATUS:",
+            error.response?.status
+          );
+
+          console.error(
+            "CONTACT API RESPONSE:",
+            error.response?.data
+          );
+
+
+          setError(
+            error.response
+              ?.data
+              ?.message ||
+            error.message ||
             "Unable to create contact"
-        );
-      } else {
-        setError(
-          "Unable to create contact"
-        );
+          );
+
+        } else if (
+          error instanceof Error
+        ) {
+          setError(
+            error.message
+          );
+
+        } else {
+          setError(
+            "Unable to create contact"
+          );
+        }
+
+      } finally {
+        setLoading(false);
       }
+    };
 
-    } finally {
-      setLoading(false);
-    }
-  };
 
+  /*
+   * =========================================================
+   * FORM
+   * =========================================================
+   */
 
   return (
     <form
       className="form-grid"
-      onSubmit={handleSubmit}
+      onSubmit={
+        handleSubmit
+      }
     >
+
+      {/* TITLE */}
 
       <div className="form-group form-group-full">
 
@@ -190,51 +392,86 @@ export default function ContactForm({
       </div>
 
 
+      {/* COMPANY */}
+
       <div className="form-group form-group-full">
 
-        <label>
+        <label
+          htmlFor="contact-company"
+        >
           Company
         </label>
 
+
         <select
-          value={companyId}
+          id="contact-company"
+          name="companyId"
+          value={
+            companyId
+          }
           onChange={(event) =>
             setCompanyId(
               event.target.value
             )
           }
+          disabled={
+            loadingCompanies ||
+            loading
+          }
         >
+
           <option value="">
             No Company
           </option>
 
+
           {companies.map(
             (company) => (
               <option
-                key={company.id}
-                value={company.id}
+                key={
+                  company.id
+                }
+                value={
+                  company.id
+                }
               >
                 {company.name}
               </option>
             )
           )}
+
         </select>
 
       </div>
 
 
+      {/* FIRST NAME */}
+
       <div className="form-group">
 
-        <label>
+        <label
+          htmlFor="contact-first-name"
+        >
           First Name
         </label>
 
+
         <input
-          value={firstName}
+          id="contact-first-name"
+          name="firstName"
+          type="text"
+          value={
+            firstName
+          }
           onChange={(event) =>
             setFirstName(
               event.target.value
             )
+          }
+          placeholder="First name"
+          autoComplete="given-name"
+          disabled={
+            loading
           }
           required
         />
@@ -242,113 +479,205 @@ export default function ContactForm({
       </div>
 
 
+      {/* LAST NAME */}
+
       <div className="form-group">
 
-        <label>
+        <label
+          htmlFor="contact-last-name"
+        >
           Last Name
         </label>
 
+
         <input
-          value={lastName}
+          id="contact-last-name"
+          name="lastName"
+          type="text"
+          value={
+            lastName
+          }
           onChange={(event) =>
             setLastName(
               event.target.value
             )
           }
+          placeholder="Last name"
+          autoComplete="family-name"
+          disabled={
+            loading
+          }
         />
 
       </div>
 
 
+      {/* EMAIL */}
+
       <div className="form-group">
 
-        <label>
+        <label
+          htmlFor="contact-email"
+        >
           Email
         </label>
 
+
         <input
+          id="contact-email"
+          name="email"
           type="email"
-          value={email}
+          value={
+            email
+          }
           onChange={(event) =>
             setEmail(
               event.target.value
             )
           }
+          placeholder="person@example.com"
+          autoComplete="email"
+          disabled={
+            loading
+          }
         />
 
       </div>
 
 
+      {/* PHONE */}
+
       <div className="form-group">
 
-        <label>
+        <label
+          htmlFor="contact-phone"
+        >
           Phone
         </label>
 
+
         <input
-          value={phone}
+          id="contact-phone"
+          name="phone"
+          type="tel"
+          value={
+            phone
+          }
           onChange={(event) =>
             setPhone(
               event.target.value
             )
           }
+          placeholder="0771234567"
+          autoComplete="tel"
+          disabled={
+            loading
+          }
         />
 
       </div>
 
 
+      {/* JOB TITLE */}
+
       <div className="form-group form-group-full">
 
-        <label>
+        <label
+          htmlFor="contact-job-title"
+        >
           Job Title
         </label>
 
+
         <input
-          value={jobTitle}
+          id="contact-job-title"
+          name="jobTitle"
+          type="text"
+          value={
+            jobTitle
+          }
           onChange={(event) =>
             setJobTitle(
               event.target.value
             )
           }
-        />
-
-      </div>
-
-
-      <div className="form-group form-group-full">
-
-        <label>
-          Notes
-        </label>
-
-        <textarea
-          value={notes}
-          onChange={(event) =>
-            setNotes(
-              event.target.value
-            )
+          placeholder="Engineer"
+          disabled={
+            loading
           }
         />
 
       </div>
 
 
+      {/* NOTES */}
+
+      <div className="form-group form-group-full">
+
+        <label
+          htmlFor="contact-notes"
+        >
+          Notes
+        </label>
+
+
+        <textarea
+          id="contact-notes"
+          name="notes"
+          value={
+            notes
+          }
+          onChange={(event) =>
+            setNotes(
+              event.target.value
+            )
+          }
+          placeholder="Additional information about this contact..."
+          disabled={
+            loading
+          }
+        />
+
+      </div>
+
+
+      {/* ERROR */}
+
       {error && (
-        <p className="error-message form-group-full">
+        <div className="error-message form-group-full">
+
           {error}
-        </p>
+
+        </div>
       )}
 
+
+      {/* SUCCESS */}
+
+      {success && (
+        <div className="success-message form-group-full">
+
+          {success}
+
+        </div>
+      )}
+
+
+      {/* SUBMIT */}
 
       <div className="button-row form-group-full">
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={
+            loading
+          }
         >
+
           {loading
             ? "Creating..."
             : "Create Contact"}
+
         </button>
 
       </div>

@@ -20,7 +20,8 @@ import {
 interface Profile {
   id: string;
 
-  full_name: string | null;
+  full_name:
+    string | null;
 
   email: string;
 
@@ -44,44 +45,35 @@ export default function Sidebar() {
     useAuth();
 
 
-  /*
-   * Load logged-in CRM profile.
-   */
   useEffect(() => {
+
     const loadProfile =
       async () => {
+
         try {
+
           const response =
             await api.get(
               "/me"
             );
 
 
-          /*
-           * Your /api/me endpoint should
-           * return:
-           *
-           * {
-           *   success: true,
-           *   data: {
-           *     user: {...}
-           *   }
-           * }
-           */
           setProfile(
             response.data.data.user
           );
 
         } catch (error) {
+
           console.error(
             "SIDEBAR PROFILE ERROR:",
             error
           );
+
         }
       };
 
 
-    loadProfile();
+    void loadProfile();
 
   }, []);
 
@@ -91,14 +83,55 @@ export default function Sidebar() {
 
 
   /*
-   * User avatar initials.
+   * =========================================================
+   * SALES MANAGER + SENIOR MANAGER
+   *
+   * BOTH HAVE THE SAME MANAGEMENT ACCESS.
+   * =========================================================
    */
+
+  const hasSeniorAccess =
+    role ===
+      "sales_manager" ||
+    role ===
+      "senior_manager";
+
+
+  const hasBasicSalesAccess =
+    role ===
+      "sales_rep";
+
+
+  const canSeeSales =
+    hasSeniorAccess ||
+    hasBasicSalesAccess;
+
+
+  const canSeeFinancial =
+    role ===
+    "financial_officer";
+
+
+  const canSeeTechnical =
+    role ===
+    "technical_officer";
+
+
+  const canSeeTeamProgress =
+    hasSeniorAccess ||
+    role ===
+      "team_member";
+
+
   const initials =
     useMemo(() => {
+
       if (
         profile?.full_name
       ) {
-        return profile.full_name
+
+        return profile
+          .full_name
           .split(" ")
           .filter(Boolean)
           .slice(0, 2)
@@ -112,53 +145,18 @@ export default function Sidebar() {
       }
 
 
-      if (
-        profile?.email
-      ) {
-        return profile.email
-          .slice(0, 2)
-          .toUpperCase();
-      }
-
-
-      return "CR";
+      return profile?.email
+        ?.slice(0, 2)
+        .toUpperCase() ||
+        "CR";
 
     }, [
       profile,
     ]);
 
 
-  /*
-   * Sales-related pages.
-   */
-  const canSeeSales =
-    role === "sales_rep" ||
-    role === "sales_manager" ||
-    role === "senior_manager";
-
-
-  /*
-   * Delivery pages.
-   */
-  const canSeeDelivery =
-    role === "team_member" ||
-    role === "senior_manager";
-
-
-  /*
-   * Final updates.
-   */
-  const canSeeFinalUpdates =
-    role === "sales_rep" ||
-    role === "sales_manager";
-
-
   return (
     <aside className="crm-sidebar">
-
-      {/* =========================
-          LOGO / BRAND
-      ========================== */}
 
       <div className="sidebar-brand">
 
@@ -182,10 +180,6 @@ export default function Sidebar() {
       </div>
 
 
-      {/* =========================
-          NAVIGATION
-      ========================== */}
-
       <nav className="sidebar-nav">
 
         {/* MAIN */}
@@ -205,11 +199,42 @@ export default function Sidebar() {
           />
 
         </div>
+      <div className="sidebar-section">
+
+        <span className="sidebar-section-label">
+          Communication
+        </span>
+
+
+        <MenuLink
+          to="/chat"
+          icon="CH"
+          label="Chat"
+        />
+
+      </div>
+
+
+      <div className="sidebar-section">
+
+        <span className="sidebar-section-label">
+          Planning
+        </span>
+
+
+        <MenuLink
+          to="/calendar"
+          icon="CA"
+          label="Calendar"
+        />
+
+      </div>
 
 
         {/* SALES */}
 
         {canSeeSales && (
+
           <div className="sidebar-section">
 
             <span className="sidebar-section-title">
@@ -238,13 +263,17 @@ export default function Sidebar() {
             />
 
           </div>
+
         )}
 
 
-        {/* SENIOR MANAGER */}
+        {/* MANAGEMENT
+            SALES MANAGER + SENIOR MANAGER
+            ARE IDENTICAL HERE.
+        */}
 
-        {role ===
-          "senior_manager" && (
+        {hasSeniorAccess && (
+
           <div className="sidebar-section">
 
             <span className="sidebar-section-title">
@@ -273,12 +302,14 @@ export default function Sidebar() {
             />
 
           </div>
+
         )}
 
 
         {/* DELIVERY */}
 
-        {canSeeDelivery && (
+        {canSeeTeamProgress && (
+
           <div className="sidebar-section">
 
             <span className="sidebar-section-title">
@@ -293,34 +324,62 @@ export default function Sidebar() {
             />
 
           </div>
+
         )}
 
 
-        {/* FINAL UPDATES */}
+        {/* FINANCIAL */}
 
-        {canSeeFinalUpdates && (
+        {canSeeFinancial && (
+
           <div className="sidebar-section">
 
             <span className="sidebar-section-title">
-              Updates
+              Financial
             </span>
 
 
             <MenuLink
-              to="/final-updates"
-              icon="FU"
-              label="Final Updates"
+              to="/financial-review"
+              icon="FR"
+              label="Financial Review"
+            />
+
+
+            <MenuLink
+              to="/financial-review/archive"
+              icon="AR"
+              label="Rejected Archive"
             />
 
           </div>
+
+        )}
+
+
+        {/* TECHNICAL */}
+
+        {canSeeTechnical && (
+
+          <div className="sidebar-section">
+
+            <span className="sidebar-section-title">
+              Technical
+            </span>
+
+
+            <MenuLink
+              to="/technical-review"
+              icon="TR"
+              label="Technical Review"
+            />
+
+          </div>
+
         )}
 
       </nav>
 
-
-      {/* =========================
-          USER AREA
-      ========================== */}
 
       <div className="sidebar-user">
 
@@ -334,16 +393,20 @@ export default function Sidebar() {
           <div className="sidebar-user-text">
 
             <strong>
+
               {profile?.full_name ||
                 profile?.email ||
                 "CRM User"}
+
             </strong>
 
 
             <span>
+
               {formatRole(
                 profile?.role
               )}
+
             </span>
 
           </div>
@@ -368,12 +431,6 @@ export default function Sidebar() {
 }
 
 
-/*
- * =========================================================
- * REUSABLE SIDEBAR LINK
- * =========================================================
- */
-
 interface MenuLinkProps {
   to: string;
 
@@ -391,6 +448,7 @@ function MenuLink({
   label,
   end = false,
 }: MenuLinkProps) {
+
   return (
     <NavLink
       to={to}
@@ -418,15 +476,10 @@ function MenuLink({
 }
 
 
-/*
- * =========================================================
- * FORMAT ROLE
- * =========================================================
- */
-
 function formatRole(
   role?: string
 ) {
+
   if (!role) {
     return "Loading...";
   }

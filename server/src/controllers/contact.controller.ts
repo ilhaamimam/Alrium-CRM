@@ -1,99 +1,139 @@
-import {
+import type {
   Request,
   Response,
 } from "express";
 
 import {
-  createContact,
-  getContactById,
-  getContacts,
-  updateContact,
+  createContactRecord,
+  deleteContactRecord,
+  getAllContacts,
+  getContactRecordById,
+  updateContactRecord,
 } from "../services/contact.service";
 
 
 /*
- * GET /api/contacts
+ * =========================================================
+ * GET ALL
+ * =========================================================
  */
-export const listContacts =
+
+export const getContactsHandler =
   async (
-    req: Request,
+    _req: Request,
     res: Response
   ) => {
-    try {
-      const contacts =
-        await getContacts();
 
-      return res.status(200).json({
-        success: true,
-        data: contacts,
-      });
+    try {
+
+      const contacts =
+        await getAllContacts();
+
+
+      return res
+        .status(200)
+        .json({
+          success: true,
+
+          data:
+            contacts,
+        });
 
     } catch (error) {
+
       console.error(
-        "LIST CONTACTS ERROR:",
+        "GET CONTACTS CONTROLLER ERROR:",
         error
       );
 
-      return res.status(500).json({
-        success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Unable to load contacts",
-      });
+
+      return res
+        .status(500)
+        .json({
+          success: false,
+
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to load contacts",
+        });
     }
   };
 
 
 /*
- * GET /api/contacts/:id
+ * =========================================================
+ * GET ONE
+ * =========================================================
  */
-export const getSingleContact =
+
+export const getContactHandler =
   async (
     req: Request<{
       id: string;
     }>,
     res: Response
   ) => {
+
     try {
+
       const contact =
-        await getContactById(
+        await getContactRecordById(
           req.params.id
         );
 
-      return res.status(200).json({
-        success: true,
-        data: contact,
-      });
+
+      return res
+        .status(200)
+        .json({
+          success: true,
+
+          data:
+            contact,
+        });
 
     } catch (error) {
-      console.error(
-        "GET SINGLE CONTACT ERROR:",
-        error
-      );
 
-      return res.status(404).json({
-        success: false,
-        message:
-          "Contact not found",
-      });
+      return res
+        .status(404)
+        .json({
+          success: false,
+
+          message:
+            error instanceof Error
+              ? error.message
+              : "Contact not found",
+        });
     }
   };
 
 
 /*
- * POST /api/contacts
+ * =========================================================
+ * CREATE
+ * =========================================================
  */
-export const addContact =
+
+export const createContactHandler =
   async (
     req: Request,
     res: Response
   ) => {
+
     try {
-      console.log(
-        "CONTACT REQUEST BODY:",
-        req.body
-      );
+
+      if (!req.user) {
+
+        return res
+          .status(401)
+          .json({
+            success: false,
+
+            message:
+              "Authentication required",
+          });
+      }
+
 
       console.log(
         "CONTACT REQUEST USER:",
@@ -101,21 +141,29 @@ export const addContact =
       );
 
 
-      /*
-       * Ensure logged-in CRM user exists.
-       */
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          message:
-            "Authentication required",
-        });
+      console.log(
+        "CONTACT REQUEST BODY:",
+        req.body
+      );
+
+
+      if (
+        !req.body ||
+        typeof req.body !==
+          "object"
+      ) {
+
+        return res
+          .status(400)
+          .json({
+            success: false,
+
+            message:
+              "Contact request body is missing",
+          });
       }
 
 
-      /*
-       * React sends camelCase names.
-       */
       const {
         companyId,
         firstName,
@@ -125,7 +173,7 @@ export const addContact =
         jobTitle,
         notes,
       } =
-        req.body ?? {};
+        req.body;
 
 
       console.log(
@@ -134,106 +182,130 @@ export const addContact =
       );
 
 
-      /*
-       * Validate first name.
-       */
       if (
         typeof firstName !==
           "string" ||
         !firstName.trim()
       ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "First name is required",
-        });
+
+        return res
+          .status(400)
+          .json({
+            success: false,
+
+            message:
+              "First name is required",
+          });
       }
 
 
-      /*
-       * Create contact.
-       */
       const contact =
-        await createContact({
+        await createContactRecord({
           companyId:
-            companyId || null,
+            cleanOptionalString(
+              companyId
+            ),
 
           firstName:
             firstName.trim(),
 
           lastName:
-            typeof lastName ===
-            "string"
-              ? lastName.trim()
-              : "",
+            cleanOptionalString(
+              lastName
+            ),
 
           email:
-            typeof email ===
-            "string"
-              ? email.trim()
-              : "",
+            cleanOptionalString(
+              email
+            ),
 
           phone:
-            typeof phone ===
-            "string"
-              ? phone.trim()
-              : "",
+            cleanOptionalString(
+              phone
+            ),
 
           jobTitle:
-            typeof jobTitle ===
-            "string"
-              ? jobTitle.trim()
-              : "",
+            cleanOptionalString(
+              jobTitle
+            ),
 
           notes:
-            typeof notes ===
-            "string"
-              ? notes.trim()
-              : "",
+            cleanOptionalString(
+              notes
+            ),
 
           createdBy:
             req.user.id,
         });
 
 
-      return res.status(201).json({
-        success: true,
+      return res
+        .status(201)
+        .json({
+          success: true,
 
-        message:
-          "Contact created successfully",
+          message:
+            "Contact created successfully",
 
-        data: contact,
-      });
+          data:
+            contact,
+        });
 
     } catch (error) {
+
       console.error(
         "CREATE CONTACT CONTROLLER ERROR:",
         error
       );
 
-      return res.status(500).json({
-        success: false,
 
-        message:
-          error instanceof Error
-            ? error.message
-            : "Unable to create contact",
-      });
+      return res
+        .status(500)
+        .json({
+          success: false,
+
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to create contact",
+        });
     }
   };
 
 
 /*
- * PATCH /api/contacts/:id
+ * =========================================================
+ * UPDATE
+ * =========================================================
  */
-export const editContact =
+
+export const updateContactHandler =
   async (
     req: Request<{
       id: string;
     }>,
     res: Response
   ) => {
+
     try {
+
+      if (
+        !req.body ||
+        typeof req.body !==
+          "object"
+      ) {
+
+        return res
+          .status(400)
+          .json({
+            success: false,
+
+            message:
+              "Contact request body is missing",
+          });
+      }
+
+
       const {
         companyId,
         firstName,
@@ -243,8 +315,13 @@ export const editContact =
         jobTitle,
         notes,
       } =
-        req.body ?? {};
+        req.body;
 
+
+      /*
+       * If firstName is included in update,
+       * it cannot be blank.
+       */
 
       if (
         firstName !==
@@ -255,61 +332,188 @@ export const editContact =
           !firstName.trim()
         )
       ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "First name cannot be empty",
-        });
+
+        return res
+          .status(400)
+          .json({
+            success: false,
+
+            message:
+              "First name is required",
+          });
       }
 
 
       const contact =
-        await updateContact(
+        await updateContactRecord(
           req.params.id,
           {
-            companyId,
+            companyId:
+              companyId ===
+                undefined
+                ? undefined
+                : cleanOptionalString(
+                    companyId
+                  ),
 
-            ...(firstName !==
-              undefined && {
-              firstName:
-                firstName.trim(),
-            }),
+            firstName:
+              firstName ===
+                undefined
+                ? undefined
+                : firstName.trim(),
 
-            lastName,
+            lastName:
+              lastName ===
+                undefined
+                ? undefined
+                : cleanOptionalString(
+                    lastName
+                  ),
 
-            email,
+            email:
+              email ===
+                undefined
+                ? undefined
+                : cleanOptionalString(
+                    email
+                  ),
 
-            phone,
+            phone:
+              phone ===
+                undefined
+                ? undefined
+                : cleanOptionalString(
+                    phone
+                  ),
 
-            jobTitle,
+            jobTitle:
+              jobTitle ===
+                undefined
+                ? undefined
+                : cleanOptionalString(
+                    jobTitle
+                  ),
 
-            notes,
+            notes:
+              notes ===
+                undefined
+                ? undefined
+                : cleanOptionalString(
+                    notes
+                  ),
           }
         );
 
 
-      return res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        message:
-          "Contact updated successfully",
+          message:
+            "Contact updated successfully",
 
-        data: contact,
-      });
+          data:
+            contact,
+        });
 
     } catch (error) {
+
       console.error(
-        "UPDATE CONTACT ERROR:",
+        "UPDATE CONTACT CONTROLLER ERROR:",
         error
       );
 
-      return res.status(500).json({
-        success: false,
 
-        message:
-          error instanceof Error
-            ? error.message
-            : "Unable to update contact",
-      });
+      return res
+        .status(500)
+        .json({
+          success: false,
+
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to update contact",
+        });
     }
   };
+
+
+/*
+ * =========================================================
+ * DELETE
+ * =========================================================
+ */
+
+export const deleteContactHandler =
+  async (
+    req: Request<{
+      id: string;
+    }>,
+    res: Response
+  ) => {
+
+    try {
+
+      await deleteContactRecord(
+        req.params.id
+      );
+
+
+      return res
+        .status(200)
+        .json({
+          success: true,
+
+          message:
+            "Contact deleted successfully",
+        });
+
+    } catch (error) {
+
+      console.error(
+        "DELETE CONTACT CONTROLLER ERROR:",
+        error
+      );
+
+
+      return res
+        .status(500)
+        .json({
+          success: false,
+
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to delete contact",
+        });
+    }
+  };
+
+
+/*
+ * =========================================================
+ * HELPER
+ * =========================================================
+ */
+
+function cleanOptionalString(
+  value: unknown
+): string | null {
+
+  if (
+    typeof value !==
+    "string"
+  ) {
+    return null;
+  }
+
+
+  const cleaned =
+    value.trim();
+
+
+  return cleaned
+    ? cleaned
+    : null;
+}

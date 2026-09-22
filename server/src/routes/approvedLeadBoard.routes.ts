@@ -31,7 +31,9 @@ router.get(
   "/lead-board/available",
   requireAuth,
   allowRoles(
-    "senior_manager"
+    "senior_manager",
+    "sales_manager"
+
   ),
   listAvailableApprovedLeads
 );
