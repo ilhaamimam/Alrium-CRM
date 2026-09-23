@@ -1,1069 +1,1364 @@
 import {
-  useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
 
-import {
-  Link,
-} from "react-router-dom";
-
-import {
-  fetchDashboardPipeline,
-  formatPipelineDate,
-  getPipelineStageCount,
-  pipelineStageLabels,
-  pipelineStageOrder,
-  type DashboardPipelineStage,
-  type PipelineLead,
-  type PipelineSummary,
-} from "../../api/pipeline.api";
+import { supabase } from "../../lib/supabase";
 
 import "./dashboardPipeline.css";
 
+/*
+ * =========================================================
+ * TYPES
+ * =========================================================
+ */
 
-const EMPTY_SUMMARY: PipelineSummary = {
-  total: 0,
-  new: 0,
-  financial_review: 0,
-  technical_review: 0,
-  approved: 0,
-  team_allocated: 0,
-  in_progress: 0,
-  completion_review: 0,
-  completed: 0,
-  rejected: 0,
-  changes_required: 0,
+type PipelineStageKey =
+  | "created"
+  | "sales-assigned"
+  | "financial-review"
+  | "technical-review"
+  | "approved"
+  | "lead-board"
+  | "team-allocation"
+  | "project-progress"
+  | "completed";
+
+type PipelineStage = {
+  key: PipelineStageKey;
+  label: string;
+  shortLabel: string;
 };
 
+type LeadRecord = {
+  id: string;
+  title: string;
+  companyName: string;
 
-type PipelineFilter =
-  | "all"
-  | DashboardPipelineStage
-  | "rejected"
-  | "changes_required";
+  status?: string;
+  leadStatus?: string;
+  workflowStatus?: string;
+  pipelineStage?: string;
 
+  financialStatus?: string;
+  financialApprovalStatus?: string;
 
-export default function DashboardPipeline() {
+  technicalStatus?: string;
+  technicalApprovalStatus?: string;
+
+  leadBoardStatus?: string;
+
+  projectStatus?: string;
+  teamProgressStatus?: string;
+
+  assignedTo?: unknown;
+  assignedSalesRep?: unknown;
+  salesRepresentative?: unknown;
+
+  team?: unknown;
+  teamId?: unknown;
+
+  [key: string]: unknown;
+};
+
+/*
+ * =========================================================
+ * PIPELINE STAGES
+ * =========================================================
+ */
+
+const PIPELINE_STAGES: PipelineStage[] = [
+  {
+    key: "created",
+    label: "Lead Created",
+    shortLabel: "Created",
+  },
+  {
+    key: "sales-assigned",
+    label: "Assigned to Sales Representative",
+    shortLabel: "Sales Rep",
+  },
+  {
+    key: "financial-review",
+    label: "Financial Review",
+    shortLabel: "Finance",
+  },
+  {
+    key: "technical-review",
+    label: "Technical Review",
+    shortLabel: "Technical",
+  },
+  {
+    key: "approved",
+    label: "Lead Approved",
+    shortLabel: "Approved",
+  },
+  {
+    key: "lead-board",
+    label: "Lead Board",
+    shortLabel: "Lead Board",
+  },
+  {
+    key: "team-allocation",
+    label: "Team Allocation",
+    shortLabel: "Team",
+  },
+  {
+    key: "project-progress",
+    label: "Project Progress",
+    shortLabel: "Progress",
+  },
+  {
+    key: "completed",
+    label: "Project Completed",
+    shortLabel: "Completed",
+  },
+];
+
+/*
+ * =========================================================
+ * API
+ * =========================================================
+ */
+
+const API_BASE_URL = String(
+  import.meta.env.VITE_API_URL ?? ""
+).replace(/\/+$/, "");
+
+const LEADS_API_URL =
+  `${API_BASE_URL}/dashboard/pipeline`;
+
+/*
+ * =========================================================
+ * HELPERS
+ * =========================================================
+ */
+
+const normalizeValue = (
+  value: unknown
+): string => {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return "";
+  }
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+};
+
+const getLeadId = (
+  lead: Record<string, unknown>
+): string => {
+  return String(
+    lead.id ??
+      lead.leadId ??
+      lead.lead_id ??
+      lead._id ??
+      ""
+  );
+};
+
+const getLeadTitle = (
+  lead: Record<string, unknown>
+): string => {
+  return String(
+    lead.title ??
+      lead.leadTitle ??
+      lead.lead_title ??
+      lead.name ??
+      "Untitled Lead"
+  );
+};
+
+const getCompanyName = (
+  lead: Record<string, unknown>
+): string => {
+  const company = lead.company;
+
+  if (
+    company &&
+    typeof company === "object"
+  ) {
+    const companyObject =
+      company as Record<
+        string,
+        unknown
+      >;
+
+    return String(
+      companyObject.name ??
+        companyObject.companyName ??
+        companyObject.company_name ??
+        "Unknown Company"
+    );
+  }
+
+  return String(
+    lead.companyName ??
+      lead.company_name ??
+      lead.company ??
+      "Unknown Company"
+  );
+};
+
+const normalizeLead = (
+  lead: Record<string, unknown>
+): LeadRecord => {
+  return {
+    ...lead,
+
+    id: getLeadId(lead),
+
+    title:
+      getLeadTitle(lead),
+
+    companyName:
+      getCompanyName(lead),
+
+    status: String(
+      lead.status ?? ""
+    ),
+
+    leadStatus: String(
+      lead.leadStatus ??
+        lead.lead_status ??
+        ""
+    ),
+
+    workflowStatus: String(
+      lead.workflowStatus ??
+        lead.workflow_status ??
+        ""
+    ),
+
+    pipelineStage: String(
+      lead.pipelineStage ??
+        lead.pipeline_stage ??
+        ""
+    ),
+
+    financialStatus: String(
+      lead.financialStatus ??
+        lead.financial_status ??
+        ""
+    ),
+
+    financialApprovalStatus:
+      String(
+        lead.financialApprovalStatus ??
+          lead.financial_approval_status ??
+          ""
+      ),
+
+    technicalStatus: String(
+      lead.technicalStatus ??
+        lead.technical_status ??
+        ""
+    ),
+
+    technicalApprovalStatus:
+      String(
+        lead.technicalApprovalStatus ??
+          lead.technical_approval_status ??
+          ""
+      ),
+
+    leadBoardStatus: String(
+      lead.leadBoardStatus ??
+        lead.lead_board_status ??
+        ""
+    ),
+
+    projectStatus: String(
+      lead.projectStatus ??
+        lead.project_status ??
+        ""
+    ),
+
+    teamProgressStatus: String(
+      lead.teamProgressStatus ??
+        lead.team_progress_status ??
+        ""
+    ),
+  };
+};
+
+/*
+ * =========================================================
+ * CURRENT PIPELINE STAGE
+ * =========================================================
+ */
+
+const getCurrentStage = (
+  lead: LeadRecord
+): PipelineStageKey => {
+  const explicitStage =
+    normalizeValue(
+      lead.pipelineStage
+    );
+
+  const workflowStatus =
+    normalizeValue(
+      lead.workflowStatus
+    );
+
+  const leadStatus =
+    normalizeValue(
+      lead.leadStatus ||
+        lead.status
+    );
+
+  const financialStatus =
+    normalizeValue(
+      lead.financialApprovalStatus ||
+        lead.financialStatus
+    );
+
+  const technicalStatus =
+    normalizeValue(
+      lead.technicalApprovalStatus ||
+        lead.technicalStatus
+    );
+
+  const leadBoardStatus =
+    normalizeValue(
+      lead.leadBoardStatus
+    );
+
+  const projectStatus =
+    normalizeValue(
+      lead.projectStatus ||
+        lead.teamProgressStatus
+    );
+
   /*
-   * =========================================================
-   * DATA
-   * =========================================================
+   * COMPLETED
    */
 
+  if (
+    [
+      explicitStage,
+      workflowStatus,
+      projectStatus,
+      leadBoardStatus,
+    ].some((value) =>
+      [
+        "completed",
+        "complete",
+        "done",
+        "project_completed",
+      ].includes(value)
+    )
+  ) {
+    return "completed";
+  }
+
+  /*
+   * PROJECT PROGRESS
+   */
+
+  if (
+    [
+      explicitStage,
+      workflowStatus,
+      projectStatus,
+    ].some((value) =>
+      [
+        "project_progress",
+        "progress",
+        "in_progress",
+        "ongoing",
+        "on_hold",
+      ].includes(value)
+    )
+  ) {
+    return "project-progress";
+  }
+
+  /*
+   * TEAM ALLOCATION
+   */
+
+  if (
+    explicitStage ===
+      "team_allocation" ||
+    workflowStatus ===
+      "team_allocation" ||
+    leadBoardStatus ===
+      "assigned" ||
+    Boolean(lead.teamId) ||
+    Boolean(lead.team)
+  ) {
+    return "team-allocation";
+  }
+
+  /*
+   * LEAD BOARD
+   */
+
+  if (
+    [
+      explicitStage,
+      workflowStatus,
+      leadBoardStatus,
+    ].some((value) =>
+      [
+        "lead_board",
+        "pending",
+        "planned",
+      ].includes(value)
+    )
+  ) {
+    return "lead-board";
+  }
+
+  /*
+   * APPROVED
+   */
+
+  if (
+    [
+      explicitStage,
+      workflowStatus,
+      leadStatus,
+    ].some((value) =>
+      [
+        "approved",
+        "hot",
+        "hot_approved",
+        "fully_approved",
+      ].includes(value)
+    ) ||
+    (
+      financialStatus ===
+        "approved" &&
+      technicalStatus ===
+        "approved"
+    )
+  ) {
+    return "approved";
+  }
+
+  /*
+   * TECHNICAL REVIEW
+   */
+
+  if (
+    [
+      explicitStage,
+      workflowStatus,
+      leadStatus,
+    ].some((value) =>
+      [
+        "technical_review",
+        "technical_pending",
+        "waiting_for_technical_review",
+        "waiting_technical_review",
+      ].includes(value)
+    ) ||
+    (
+      financialStatus ===
+        "approved" &&
+      technicalStatus !==
+        "approved"
+    )
+  ) {
+    return "technical-review";
+  }
+
+  /*
+   * FINANCIAL REVIEW
+   */
+
+  if (
+    [
+      explicitStage,
+      workflowStatus,
+      leadStatus,
+    ].some((value) =>
+      [
+        "financial_review",
+        "financial_pending",
+        "waiting_for_financial_review",
+        "waiting_financial_review",
+      ].includes(value)
+    )
+  ) {
+    return "financial-review";
+  }
+
+  /*
+   * SALES REPRESENTATIVE ASSIGNED
+   */
+
+  if (
+    explicitStage ===
+      "sales_assigned" ||
+    workflowStatus ===
+      "sales_assigned" ||
+    leadStatus ===
+      "cold" ||
+    leadStatus ===
+      "assigned" ||
+    Boolean(
+      lead.assignedTo
+    ) ||
+    Boolean(
+      lead.assignedSalesRep
+    ) ||
+    Boolean(
+      lead.salesRepresentative
+    )
+  ) {
+    return "sales-assigned";
+  }
+
+  return "created";
+};
+
+const getStageIndex = (
+  stage: PipelineStageKey
+): number => {
+  return PIPELINE_STAGES.findIndex(
+    (item) =>
+      item.key === stage
+  );
+};
+
+const getStageLabel = (
+  stage: PipelineStageKey
+): string => {
+  return (
+    PIPELINE_STAGES.find(
+      (item) =>
+        item.key === stage
+    )?.label ??
+    "Unknown"
+  );
+};
+
+/*
+ * =========================================================
+ * API RESPONSE
+ * =========================================================
+ */
+
+const extractLeads = (
+  response: unknown
+): Record<
+  string,
+  unknown
+>[] => {
+  /*
+   * API returns array directly
+   */
+
+  if (
+    Array.isArray(response)
+  ) {
+    return response;
+  }
+
+  if (
+    response &&
+    typeof response ===
+      "object"
+  ) {
+    const object =
+      response as Record<
+        string,
+        unknown
+      >;
+
+    /*
+     * {
+     *   leads: [...]
+     * }
+     */
+
+    if (
+      Array.isArray(
+        object.leads
+      )
+    ) {
+      return object.leads;
+    }
+
+    /*
+     * {
+     *   pipeline: [...]
+     * }
+     */
+
+    if (
+      Array.isArray(
+        object.pipeline
+      )
+    ) {
+      return object.pipeline;
+    }
+
+    /*
+     * {
+     *   data: [...]
+     * }
+     */
+
+    if (
+      Array.isArray(
+        object.data
+      )
+    ) {
+      return object.data;
+    }
+
+    /*
+     * {
+     *   data: {
+     *     leads: [...]
+     *   }
+     * }
+     */
+
+    if (
+      object.data &&
+      typeof object.data ===
+        "object"
+    ) {
+      const data =
+        object.data as Record<
+          string,
+          unknown
+        >;
+
+      if (
+        Array.isArray(
+          data.leads
+        )
+      ) {
+        return data.leads;
+      }
+
+      /*
+       * {
+       *   data: {
+       *     pipeline: [...]
+       *   }
+       * }
+       */
+
+      if (
+        Array.isArray(
+          data.pipeline
+        )
+      ) {
+        return data.pipeline;
+      }
+    }
+  }
+
+  return [];
+};
+
+/*
+ * =========================================================
+ * COMPONENT
+ * =========================================================
+ */
+
+export default function DashboardPipeline() {
   const [
     leads,
     setLeads,
-  ] =
-    useState<PipelineLead[]>(
-      []
-    );
-
+  ] = useState<
+    LeadRecord[]
+  >([]);
 
   const [
-    summary,
-    setSummary,
-  ] =
-    useState<PipelineSummary>({
-      ...EMPTY_SUMMARY,
-    });
+    selectedLeadId,
+    setSelectedLeadId,
+  ] = useState("");
 
-
-  /*
-   * =========================================================
-   * UI STATE
-   * =========================================================
-   */
+  const [
+    minimized,
+    setMinimized,
+  ] = useState(false);
 
   const [
     loading,
     setLoading,
-  ] =
-    useState(true);
-
-
-  const [
-    refreshing,
-    setRefreshing,
-  ] =
-    useState(false);
-
+  ] = useState(true);
 
   const [
     error,
     setError,
-  ] =
-    useState("");
-
-
-  const [
-    selectedStage,
-    setSelectedStage,
-  ] =
-    useState<PipelineFilter>(
-      "all"
-    );
-
-
-  const [
-    search,
-    setSearch,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   /*
-   * =========================================================
-   * LOAD PIPELINE
-   * =========================================================
+   * =======================================================
+   * LOAD DASHBOARD PIPELINE
+   * =======================================================
    */
 
-  const loadPipeline =
-    useCallback(
-      async (
-        silent =
-          false
-      ) => {
+  useEffect(() => {
+    let cancelled = false;
 
+    const loadLeads =
+      async () => {
         try {
-
-          if (
-            silent
-          ) {
-
-            setRefreshing(
-              true
-            );
-
-          } else {
-
-            setLoading(
-              true
-            );
-          }
-
-
+          setLoading(true);
           setError("");
 
+          /*
+           * ===============================================
+           * GET CURRENT SUPABASE SESSION
+           * ===============================================
+           *
+           * Backend requireAuth expects:
+           *
+           * Authorization: Bearer <access_token>
+           * ===============================================
+           */
 
-          const data =
-            await fetchDashboardPipeline();
+          const {
+            data: {
+              session,
+            },
+            error:
+              sessionError,
+          } =
+            await supabase.auth.getSession();
 
+          if (
+            sessionError
+          ) {
+            console.error(
+              "SUPABASE SESSION ERROR:",
+              sessionError
+            );
+
+            throw new Error(
+              "Unable to verify your login session."
+            );
+          }
+
+          if (
+            !session ||
+            !session.access_token
+          ) {
+            throw new Error(
+              "Your login session was not found. Please log in again."
+            );
+          }
+
+          /*
+           * ===============================================
+           * REQUEST PIPELINE
+           * ===============================================
+           */
+
+          const response =
+            await fetch(
+              LEADS_API_URL,
+              {
+                method: "GET",
+
+                headers: {
+                  Accept:
+                    "application/json",
+
+                  Authorization:
+                    `Bearer ${session.access_token}`,
+                },
+              }
+            );
+
+          /*
+           * Read JSON response.
+           */
+
+          const responseData:
+            unknown =
+            await response
+              .json()
+              .catch(
+                () => ({})
+              );
+
+          /*
+           * ===============================================
+           * HANDLE API ERROR
+           * ===============================================
+           */
+
+          if (
+            !response.ok
+          ) {
+            let message =
+              `Unable to load leads. Server returned ${response.status}.`;
+
+            if (
+              responseData &&
+              typeof responseData ===
+                "object" &&
+              "message" in
+                responseData
+            ) {
+              const apiMessage =
+                (
+                  responseData as {
+                    message?: unknown;
+                  }
+                ).message;
+
+              if (
+                typeof apiMessage ===
+                  "string" &&
+                apiMessage.trim()
+              ) {
+                message =
+                  apiMessage;
+              }
+            }
+
+            throw new Error(
+              message
+            );
+          }
+
+          /*
+           * ===============================================
+           * EXTRACT LEADS
+           * ===============================================
+           */
+
+          const leadData =
+            extractLeads(
+              responseData
+            );
+
+          const normalized =
+            leadData
+              .map(
+                normalizeLead
+              )
+              .filter(
+                (lead) =>
+                  Boolean(
+                    lead.id
+                  )
+              );
+
+          if (
+            cancelled
+          ) {
+            return;
+          }
 
           setLeads(
-            data.leads
+            normalized
           );
 
+          /*
+           * Select first lead automatically.
+           */
 
-          setSummary(
-            data.summary
-          );
-
-        } catch (error) {
+          if (
+            normalized.length >
+            0
+          ) {
+            setSelectedLeadId(
+              (
+                previous
+              ) =>
+                previous ||
+                normalized[0]
+                  .id
+            );
+          } else {
+            setSelectedLeadId(
+              ""
+            );
+          }
+        } catch (
+          loadError
+        ) {
+          if (
+            cancelled
+          ) {
+            return;
+          }
 
           console.error(
-            "DASHBOARD PIPELINE LOAD ERROR:",
-            error
+            "PIPELINE ERROR:",
+            loadError
           );
-
 
           setError(
-            error instanceof Error
-              ? error.message
-              : "Unable to load pipeline"
+            loadError instanceof
+              Error
+              ? loadError.message
+              : "Unable to load pipeline."
           );
 
+          setLeads([]);
         } finally {
-
-          setLoading(
-            false
-          );
-
-          setRefreshing(
-            false
-          );
+          if (
+            !cancelled
+          ) {
+            setLoading(false);
+          }
         }
-      },
-      []
-    );
+      };
 
-
-  /*
-   * =========================================================
-   * INITIAL LOAD
-   * =========================================================
-   */
-
-  useEffect(() => {
-
-    void loadPipeline();
-
-  }, [
-    loadPipeline,
-  ]);
-
-
-  /*
-   * =========================================================
-   * AUTOMATIC REFRESH
-   *
-   * Refresh every 15 seconds.
-   *
-   * So if:
-   *
-   * - Finance approves
-   * - Technical approves
-   * - Team Allocation happens
-   * - Project starts
-   * - Completion is submitted
-   * - Completion is confirmed
-   *
-   * the Dashboard automatically catches up.
-   * =========================================================
-   */
-
-  useEffect(() => {
-
-    const timer =
-      window.setInterval(
-        () => {
-
-          void loadPipeline(
-            true
-          );
-
-        },
-        15000
-      );
-
+    void loadLeads();
 
     return () => {
-
-      window.clearInterval(
-        timer
-      );
+      cancelled = true;
     };
-
-  }, [
-    loadPipeline,
-  ]);
-
+  }, []);
 
   /*
-   * =========================================================
-   * FILTERED LEADS
-   * =========================================================
+   * =======================================================
+   * SELECTED LEAD
+   * =======================================================
    */
 
-  const filteredLeads =
-    useMemo(
-      () => {
+  const selectedLead =
+    useMemo(() => {
+      return (
+        leads.find(
+          (lead) =>
+            lead.id ===
+            selectedLeadId
+        ) ?? null
+      );
+    }, [
+      leads,
+      selectedLeadId,
+    ]);
 
-        const normalizedSearch =
-          search
-            .trim()
-            .toLowerCase();
+  const currentStage =
+    selectedLead
+      ? getCurrentStage(
+          selectedLead
+        )
+      : null;
 
-
-        return leads.filter(
-          (
-            lead
-          ) => {
-
-            /*
-             * Stage filter
-             */
-
-            if (
-              selectedStage ===
-              "rejected"
-            ) {
-
-              if (
-                lead.pipeline_state !==
-                "rejected"
-              ) {
-
-                return false;
-              }
-
-            } else if (
-              selectedStage ===
-              "changes_required"
-            ) {
-
-              if (
-                lead.pipeline_state !==
-                "changes_required"
-              ) {
-
-                return false;
-              }
-
-            } else if (
-              selectedStage !==
-              "all"
-            ) {
-
-              if (
-                lead.pipeline_stage !==
-                selectedStage
-              ) {
-
-                return false;
-              }
-            }
-
-
-            /*
-             * Search filter
-             */
-
-            if (
-              normalizedSearch
-            ) {
-
-              const searchable =
-                [
-                  lead.title,
-                  lead.name,
-                  lead.company_name,
-                  lead.pipeline_stage_label,
-                  lead.pipeline_state_label,
-                  lead.financial_decision,
-                  lead.technical_decision,
-                ]
-                  .filter(
-                    Boolean
-                  )
-                  .join(" ")
-                  .toLowerCase();
-
-
-              if (
-                !searchable.includes(
-                  normalizedSearch
-                )
-              ) {
-
-                return false;
-              }
-            }
-
-
-            return true;
-          }
-        );
-
-      },
-      [
-        leads,
-        search,
-        selectedStage,
-      ]
-    );
-
+  const currentStageIndex =
+    currentStage
+      ? getStageIndex(
+          currentStage
+        )
+      : -1;
 
   /*
-   * =========================================================
-   * CURRENT FILTER TITLE
-   * =========================================================
-   */
-
-  const currentFilterTitle =
-    useMemo(
-      () => {
-
-        if (
-          selectedStage ===
-          "all"
-        ) {
-
-          return "All Leads";
-        }
-
-
-        if (
-          selectedStage ===
-          "rejected"
-        ) {
-
-          return "Rejected Leads";
-        }
-
-
-        if (
-          selectedStage ===
-          "changes_required"
-        ) {
-
-          return "Changes Required";
-        }
-
-
-        return pipelineStageLabels[
-          selectedStage
-        ];
-
-      },
-      [
-        selectedStage,
-      ]
-    );
-
-
-  /*
-   * =========================================================
-   * LOADING
-   * =========================================================
-   */
-
-  if (
-    loading
-  ) {
-
-    return (
-
-      <section className="dashboard-pipeline-shell">
-
-        <div className="dashboard-pipeline-loading">
-
-          Loading lead pipeline...
-
-        </div>
-
-      </section>
-    );
-  }
-
-
-  /*
-   * =========================================================
-   * UI
-   * =========================================================
+   * =======================================================
+   * PAGE
+   * =======================================================
    */
 
   return (
+    <div className="dashboard-pipeline-page">
+      {/*
+       * ===================================================
+       * HEADER
+       * ===================================================
+       */}
 
-    <section className="dashboard-pipeline-shell">
-
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-
-      <div className="dashboard-pipeline-heading">
-
+      <div className="pipeline-page-header">
         <div>
-
-          <span className="dashboard-pipeline-eyebrow">
-            Live CRM Workflow
-          </span>
-
-
-          <h2>
-            Lead Pipeline
-          </h2>
-
-
-          <p>
-            Track every lead from creation through
-            financial review, technical review,
-            allocation, delivery and completion.
+          <p className="pipeline-eyebrow">
+            LEAD MANAGEMENT
           </p>
 
+          <h1>
+            Lead Pipeline
+          </h1>
+
+          <p className="pipeline-description">
+            Select a lead to
+            view its current
+            position in the CRM
+            process.
+          </p>
         </div>
 
-
-        <div className="dashboard-pipeline-heading-actions">
-
-          {refreshing && (
-
-            <span className="dashboard-pipeline-refreshing">
-              Updating...
-            </span>
-
-          )}
-
-
-          <button
-            type="button"
-            onClick={() =>
-              void loadPipeline(
-                true
-              )
-            }
-            disabled={
-              refreshing
-            }
-          >
-
-            Refresh
-
-          </button>
-
-        </div>
-
-      </div>
-
-
-      {/* =====================================================
-          ERROR
-      ====================================================== */}
-
-      {error && (
-
-        <div className="dashboard-pipeline-error">
-
-          {error}
-
-        </div>
-
-      )}
-
-
-      {/* =====================================================
-          MAIN ARROW PIPELINE
-      ====================================================== */}
-
-      <div className="dashboard-pipeline-scroll">
-
-        <div className="dashboard-pipeline-track">
-
-          {pipelineStageOrder.map(
-            (
-              stage,
-              index
-            ) => {
-
-              const count =
-                getPipelineStageCount(
-                  summary,
-                  stage
-                );
-
-
-              const active =
-                selectedStage ===
-                stage;
-
-
-              return (
-
-                <button
-                  key={
-                    stage
-                  }
-                  type="button"
-                  className={
-                    [
-                      "dashboard-pipeline-stage",
-
-                      `dashboard-pipeline-stage-${index + 1}`,
-
-                      active
-                        ? "dashboard-pipeline-stage-active"
-                        : "",
-                    ]
-                      .filter(
-                        Boolean
-                      )
-                      .join(" ")
-                  }
-                  onClick={() =>
-                    setSelectedStage(
-                      active
-                        ? "all"
-                        : stage
-                    )
-                  }
-                >
-
-                  <span className="dashboard-pipeline-stage-number">
-
-                    {index + 1}
-
-                  </span>
-
-
-                  <span className="dashboard-pipeline-stage-copy">
-
-                    <strong>
-
-                      {pipelineStageLabels[
-                        stage
-                      ]}
-
-                    </strong>
-
-
-                    <small>
-
-                      {count}{" "}
-                      {count ===
-                      1
-                        ? "lead"
-                        : "leads"}
-
-                    </small>
-
-                  </span>
-
-                </button>
-              );
-            }
-          )}
-
-        </div>
-
-      </div>
-
-
-      {/* =====================================================
-          SUMMARY
-      ====================================================== */}
-
-      <div className="dashboard-pipeline-summary">
-
-        <button
-          type="button"
-          className={
-            selectedStage ===
-            "all"
-              ? "dashboard-pipeline-stat dashboard-pipeline-stat-active"
-              : "dashboard-pipeline-stat"
-          }
-          onClick={() =>
-            setSelectedStage(
-              "all"
-            )
-          }
-        >
+        <div className="pipeline-total-card">
+          <strong>
+            {leads.length}
+          </strong>
 
           <span>
             Total Leads
           </span>
-
-
-          <strong>
-            {summary.total}
-          </strong>
-
-        </button>
-
-
-        <button
-          type="button"
-          className={
-            selectedStage ===
-            "rejected"
-              ? "dashboard-pipeline-stat dashboard-pipeline-stat-active"
-              : "dashboard-pipeline-stat"
-          }
-          onClick={() =>
-            setSelectedStage(
-              "rejected"
-            )
-          }
-        >
-
-          <span>
-            Rejected
-          </span>
-
-
-          <strong>
-            {summary.rejected}
-          </strong>
-
-        </button>
-
-
-        <button
-          type="button"
-          className={
-            selectedStage ===
-            "changes_required"
-              ? "dashboard-pipeline-stat dashboard-pipeline-stat-active"
-              : "dashboard-pipeline-stat"
-          }
-          onClick={() =>
-            setSelectedStage(
-              "changes_required"
-            )
-          }
-        >
-
-          <span>
-            Changes Required
-          </span>
-
-
-          <strong>
-            {
-              summary
-                .changes_required
-            }
-          </strong>
-
-        </button>
-
-
-        <div className="dashboard-pipeline-stat">
-
-          <span>
-            Completed
-          </span>
-
-
-          <strong>
-            {summary.completed}
-          </strong>
-
         </div>
-
       </div>
 
+      {/*
+       * ===================================================
+       * LOADING
+       * ===================================================
+       */}
 
-      {/* =====================================================
-          SEARCH + CURRENT FILTER
-      ====================================================== */}
-
-      <div className="dashboard-pipeline-toolbar">
-
-        <div>
-
-          <span>
-            Showing
-          </span>
-
-
-          <strong>
-            {currentFilterTitle}
-          </strong>
-
+      {loading && (
+        <div className="pipeline-message">
+          Loading leads...
         </div>
+      )}
 
+      {/*
+       * ===================================================
+       * ERROR
+       * ===================================================
+       */}
 
-        <input
-          type="search"
-          value={
-            search
-          }
-          onChange={(
-            event
-          ) =>
-            setSearch(
-              event.target.value
-            )
-          }
-          placeholder="Search lead or company..."
-        />
-
-      </div>
-
-
-      {/* =====================================================
-          LEAD LIST
-      ====================================================== */}
-
-      <div className="dashboard-pipeline-leads">
-
-        {filteredLeads.length ===
-        0 ? (
-
-          <div className="dashboard-pipeline-empty">
-
-            No leads found for this pipeline stage.
-
+      {!loading &&
+        error && (
+          <div className="pipeline-message pipeline-error">
+            {error}
           </div>
-
-        ) : (
-
-          filteredLeads.map(
-            (
-              lead
-            ) => (
-
-              <PipelineLeadRow
-                key={
-                  lead.id
-                }
-                lead={
-                  lead
-                }
-              />
-
-            )
-          )
-
         )}
 
-      </div>
+      {/*
+       * ===================================================
+       * MAIN
+       * ===================================================
+       */}
 
-    </section>
+      {!loading &&
+        !error && (
+          <div className="pipeline-content">
+            {/*
+             * ===============================================
+             * LEAD LIST
+             * ===============================================
+             */}
+
+            <aside className="pipeline-leads-card">
+              <div className="pipeline-leads-header">
+                <div>
+                  <h2>
+                    Leads
+                  </h2>
+
+                  <p>
+                    Hover to see
+                    current status
+                  </p>
+                </div>
+
+                <span className="pipeline-count">
+                  {
+                    leads.length
+                  }
+                </span>
+              </div>
+
+              <div className="pipeline-leads-list">
+                {leads.length ===
+                  0 && (
+                  <div className="pipeline-empty">
+                    No leads
+                    available.
+                  </div>
+                )}
+
+                {leads.map(
+                  (lead) => {
+                    const stage =
+                      getCurrentStage(
+                        lead
+                      );
+
+                    const isSelected =
+                      selectedLeadId ===
+                      lead.id;
+
+                    return (
+                      <button
+                        key={
+                          lead.id
+                        }
+                        type="button"
+                        className={`pipeline-lead-row ${
+                          isSelected
+                            ? "active"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          setSelectedLeadId(
+                            lead.id
+                          );
+
+                          setMinimized(
+                            false
+                          );
+                        }}
+                      >
+                        <div className="pipeline-lead-avatar">
+                          {lead.title
+                            .charAt(
+                              0
+                            )
+                            .toUpperCase()}
+                        </div>
+
+                        <div className="pipeline-lead-details">
+                          <strong>
+                            {
+                              lead.title
+                            }
+                          </strong>
+
+                          <span>
+                            {
+                              lead.companyName
+                            }
+                          </span>
+                        </div>
+
+                        <span className="pipeline-arrow">
+                          ›
+                        </span>
+
+                        {/*
+                         * Hover status
+                         */}
+
+                        <div className="pipeline-hover-status">
+                          <small>
+                            Current
+                            Status
+                          </small>
+
+                          <strong>
+                            {getStageLabel(
+                              stage
+                            )}
+                          </strong>
+                        </div>
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            </aside>
+
+            {/*
+             * ===============================================
+             * PIPELINE DIAGRAM
+             * ===============================================
+             */}
+
+            <section
+              className={`pipeline-detail-card ${
+                minimized
+                  ? "minimized"
+                  : ""
+              }`}
+            >
+              {selectedLead ? (
+                <>
+                  <div className="pipeline-detail-header">
+                    <div>
+                      <p className="selected-lead-label">
+                        SELECTED LEAD
+                      </p>
+
+                      <h2>
+                        {
+                          selectedLead.title
+                        }
+                      </h2>
+
+                      <p>
+                        {
+                          selectedLead.companyName
+                        }
+                      </p>
+                    </div>
+
+                    <div className="pipeline-detail-actions">
+                      {currentStage && (
+                        <div className="current-stage-box">
+                          <span>
+                            Current
+                            Stage
+                          </span>
+
+                          <strong>
+                            {getStageLabel(
+                              currentStage
+                            )}
+                          </strong>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        className="pipeline-minimize-btn"
+                        onClick={() =>
+                          setMinimized(
+                            (
+                              previous
+                            ) =>
+                              !previous
+                          )
+                        }
+                        title={
+                          minimized
+                            ? "Expand pipeline"
+                            : "Minimize pipeline"
+                        }
+                      >
+                        {minimized
+                          ? "+"
+                          : "−"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {!minimized && (
+                    <>
+                      <div className="pipeline-divider" />
+
+                      <div className="pipeline-scroll-area">
+                        <div className="pipeline-flow">
+                          {PIPELINE_STAGES.map(
+                            (
+                              stage,
+                              index
+                            ) => {
+                              const completed =
+                                index <
+                                currentStageIndex;
+
+                              const current =
+                                index ===
+                                currentStageIndex;
+
+                              const upcoming =
+                                index >
+                                currentStageIndex;
+
+                              return (
+                                <div
+                                  key={
+                                    stage.key
+                                  }
+                                  className="pipeline-stage-container"
+                                >
+                                  <div
+                                    className={`pipeline-stage-card ${
+                                      completed
+                                        ? "completed"
+                                        : ""
+                                    } ${
+                                      current
+                                        ? "current"
+                                        : ""
+                                    } ${
+                                      upcoming
+                                        ? "upcoming"
+                                        : ""
+                                    }`}
+                                  >
+                                    {current && (
+                                      <span className="current-badge">
+                                        CURRENT
+                                      </span>
+                                    )}
+
+                                    <div className="stage-circle">
+                                      {completed
+                                        ? "✓"
+                                        : index +
+                                          1}
+                                    </div>
+
+                                    <span className="stage-number-label">
+                                      Stage{" "}
+                                      {index +
+                                        1}
+                                    </span>
+
+                                    <strong>
+                                      {
+                                        stage.shortLabel
+                                      }
+                                    </strong>
+                                  </div>
+
+                                  {index <
+                                    PIPELINE_STAGES.length -
+                                      1 && (
+                                    <div
+                                      className={`pipeline-line ${
+                                        index <
+                                        currentStageIndex
+                                          ? "completed"
+                                          : ""
+                                      }`}
+                                    >
+                                      <span />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="pipeline-legend">
+                        <div>
+                          <span className="legend-circle completed" />
+
+                          Completed
+                        </div>
+
+                        <div>
+                          <span className="legend-circle current" />
+
+                          Current Stage
+                        </div>
+
+                        <div>
+                          <span className="legend-circle upcoming" />
+
+                          Upcoming
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="pipeline-select-message">
+                  <div className="select-icon">
+                    →
+                  </div>
+
+                  <h2>
+                    Select a Lead
+                  </h2>
+
+                  <p>
+                    Select a lead
+                    from the list to
+                    view its
+                    pipeline.
+                  </p>
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+    </div>
   );
-}
-
-
-/*
- * =========================================================
- * PIPELINE LEAD ROW
- * =========================================================
- */
-
-function PipelineLeadRow({
-  lead,
-}: {
-  lead:
-    PipelineLead;
-}) {
-
-  return (
-
-    <article className="dashboard-pipeline-lead">
-
-      {/* ===================================================
-          LEAD
-      ==================================================== */}
-
-      <div className="dashboard-pipeline-lead-main">
-
-        <div
-          className={
-            lead.status ===
-            "hot"
-              ? "dashboard-pipeline-temperature dashboard-pipeline-temperature-hot"
-              : "dashboard-pipeline-temperature dashboard-pipeline-temperature-cold"
-          }
-        >
-
-          {lead.status ===
-          "hot"
-            ? "HOT"
-            : "COLD"}
-
-        </div>
-
-
-        <div>
-
-          <Link
-            to={
-              `/leads/${lead.id}`
-            }
-            className="dashboard-pipeline-lead-title"
-          >
-
-            {lead.title ||
-              lead.name ||
-              "Untitled Lead"}
-
-          </Link>
-
-
-          <span className="dashboard-pipeline-company">
-
-            {lead.company_name ||
-              "No company"}
-
-          </span>
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          CURRENT STAGE
-      ==================================================== */}
-
-      <div className="dashboard-pipeline-lead-detail">
-
-        <span>
-          Current Stage
-        </span>
-
-
-        <strong>
-
-          {lead.pipeline_stage_label}
-
-        </strong>
-
-      </div>
-
-
-      {/* ===================================================
-          STATE
-      ==================================================== */}
-
-      <div className="dashboard-pipeline-lead-detail">
-
-        <span>
-          Status
-        </span>
-
-
-        <PipelineStateBadge
-          lead={
-            lead
-          }
-        />
-
-      </div>
-
-
-      {/* ===================================================
-          FINANCE
-      ==================================================== */}
-
-      <div className="dashboard-pipeline-lead-detail">
-
-        <span>
-          Finance
-        </span>
-
-
-        <strong>
-
-          {formatDecision(
-            lead.financial_decision
-          )}
-
-        </strong>
-
-      </div>
-
-
-      {/* ===================================================
-          TECHNICAL
-      ==================================================== */}
-
-      <div className="dashboard-pipeline-lead-detail">
-
-        <span>
-          Technical
-        </span>
-
-
-        <strong>
-
-          {formatDecision(
-            lead.technical_decision
-          )}
-
-        </strong>
-
-      </div>
-
-
-      {/* ===================================================
-          LAST UPDATE
-      ==================================================== */}
-
-      <div className="dashboard-pipeline-lead-detail">
-
-        <span>
-          Last Update
-        </span>
-
-
-        <strong>
-
-          {formatPipelineDate(
-            lead.last_update_at
-          )}
-
-        </strong>
-
-      </div>
-
-
-      {/* ===================================================
-          VIEW
-      ==================================================== */}
-
-      <Link
-        to={
-          `/leads/${lead.id}`
-        }
-        className="dashboard-pipeline-view"
-      >
-
-        View
-
-      </Link>
-
-    </article>
-  );
-}
-
-
-/*
- * =========================================================
- * PIPELINE STATE BADGE
- * =========================================================
- */
-
-function PipelineStateBadge({
-  lead,
-}: {
-  lead:
-    PipelineLead;
-}) {
-
-  const className =
-    [
-      "dashboard-pipeline-state",
-
-      `dashboard-pipeline-state-${lead.pipeline_state}`,
-    ].join(" ");
-
-
-  return (
-
-    <strong
-      className={
-        className
-      }
-    >
-
-      {lead.pipeline_state_label}
-
-    </strong>
-  );
-}
-
-
-/*
- * =========================================================
- * DECISION LABEL
- * =========================================================
- */
-
-function formatDecision(
-  value:
-    string
-) {
-
-  switch (
-    value
-  ) {
-
-    case "approved":
-
-      return "Approved";
-
-
-    case "rejected":
-
-      return "Rejected";
-
-
-    case "pending":
-    default:
-
-      return "Pending";
-  }
 }
