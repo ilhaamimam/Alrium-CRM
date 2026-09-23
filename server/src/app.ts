@@ -10,47 +10,21 @@ import { env } from "./config/env";
  * ROUTES
  * =========================================================
  */
-import financialReviewRoutes
-  from "./routes/financialReview.routes";
 
-import calendarRoutes
-  from "./routes/calendar.routes";
-
-import profileRoutes
-  from "./routes/profile.routes";
-
-import technicalReviewRoutes
-  from "./routes/technicalReview.routes";
-import chatRoutes
-  from "./routes/chat.routes";
-
-import companyRoutes
-  from "./routes/company.routes";
-
-import pipelineRoutes
-  from "./routes/pipeline.routes";
-
-import contactRoutes
-  from "./routes/contact.routes";
-
-import dashboardPipelineRoutes
-  from "./routes/dashboard-pipeline.routes";
-
-import leadRoutes
-  from "./routes/lead.routes";
-
-import approvedLeadBoardRoutes
-  from "./routes/approvedLeadBoard.routes";
-
-import teamAllocationRoutes
-  from "./routes/teamAllocation.routes";
-
-import teamProgressRoutes
-  from "./routes/teamProgress.routes";
-
-import projectCompletionRoutes
-  from "./routes/projectCompletion.routes";
-
+import financialReviewRoutes from "./routes/financialReview.routes";
+import calendarRoutes from "./routes/calendar.routes";
+import profileRoutes from "./routes/profile.routes";
+import technicalReviewRoutes from "./routes/technicalReview.routes";
+import chatRoutes from "./routes/chat.routes";
+import companyRoutes from "./routes/company.routes";
+import pipelineRoutes from "./routes/pipeline.routes";
+import contactRoutes from "./routes/contact.routes";
+import dashboardPipelineRoutes from "./routes/dashboard-pipeline.routes";
+import leadRoutes from "./routes/lead.routes";
+import approvedLeadBoardRoutes from "./routes/approvedLeadBoard.routes";
+import teamAllocationRoutes from "./routes/teamAllocation.routes";
+import teamProgressRoutes from "./routes/teamProgress.routes";
+import projectCompletionRoutes from "./routes/projectCompletion.routes";
 
 /*
  * =========================================================
@@ -58,9 +32,7 @@ import projectCompletionRoutes
  * =========================================================
  */
 
-const app =
-  express();
-
+const app = express();
 
 /*
  * =========================================================
@@ -73,64 +45,50 @@ const app =
  * =========================================================
  */
 
+const configuredOrigins = String(env.clientUrl ?? "")
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
+
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:4173",
-  env.clientUrl,
+  ...configuredOrigins,
 ]
+  .map((url) => url.replace(/\/+$/, ""))
   .filter(
-    (
-      value,
-      index,
-      array
-    ) =>
-      Boolean(value) &&
-      array.indexOf(value) ===
-        index
+    (value, index, array) =>
+      value.length > 0 && array.indexOf(value) === index
   );
-
 
 app.use(
   cors({
-    origin: (
-      origin,
-      callback
-    ) => {
+    origin: (origin, callback) => {
       /*
-       * Allow requests without Origin,
-       * for example Postman/curl.
+       * Allow requests without an Origin.
+       * Examples:
+       * Postman
+       * curl
+       * server-to-server requests
+       * health checks
        */
       if (!origin) {
-        callback(
-          null,
-          true
-        );
-
-        return;
+        return callback(null, true);
       }
 
+      // Remove trailing slash before comparison.
+      const normalizedOrigin = origin.replace(/\/+$/, "");
 
-      if (
-        allowedOrigins.includes(
-          origin
-        )
-      ) {
-        callback(
-          null,
-          true
-        );
-
-        return;
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
       }
-
 
       console.error(
         "CORS BLOCKED ORIGIN:",
         origin
       );
 
-
-      callback(
+      return callback(
         new Error(
           `Origin ${origin} is not allowed by CORS`
         )
@@ -155,13 +113,11 @@ app.use(
   })
 );
 
-
 /*
  * =========================================================
  * BODY PARSERS
  *
- * VERY IMPORTANT:
- * THESE MUST BE BEFORE EVERY API ROUTE.
+ * These must come before API routes.
  * =========================================================
  */
 
@@ -172,35 +128,10 @@ app.use(
 );
 
 app.use(
-  "/api",
-  financialReviewRoutes
-);
-
-app.use(
-  "/api",
-  calendarRoutes
-);
-
-app.use(
   express.urlencoded({
     extended: true,
     limit: "2mb",
   })
-);
-app.use(
-  "/api",
-  chatRoutes
-);
-
-app.use(
-  "/api",
-  financialReviewRoutes
-);
-
-
-app.use(
-  "/api",
-  technicalReviewRoutes
 );
 
 /*
@@ -209,10 +140,7 @@ app.use(
  * =========================================================
  */
 
-app.use(
-  helmet()
-);
-
+app.use(helmet());
 
 /*
  * =========================================================
@@ -220,19 +148,7 @@ app.use(
  * =========================================================
  */
 
-app.use(
-  morgan("dev")
-);
-
-app.use(
-  "/api",
-  pipelineRoutes
-);
-
-app.use(
-  "/api",
-  dashboardPipelineRoutes
-);
+app.use(morgan("dev"));
 
 /*
  * =========================================================
@@ -269,9 +185,7 @@ app.use(
 
       console.log(
         "CONTENT TYPE:",
-        req.headers[
-          "content-type"
-        ]
+        req.headers["content-type"]
       );
 
       console.log(
@@ -284,11 +198,9 @@ app.use(
       );
     }
 
-
     next();
   }
 );
-
 
 /*
  * =========================================================
@@ -306,22 +218,15 @@ app.get(
       .status(200)
       .json({
         success: true,
-
         message:
           "Altrium CRM API is running",
       });
   }
 );
 
-
 /*
  * =========================================================
  * API ROUTES
- *
- * ALL ROUTES MUST COME AFTER:
- *
- * express.json()
- * express.urlencoded()
  * =========================================================
  */
 
@@ -330,48 +235,70 @@ app.use(
   profileRoutes
 );
 
-
 app.use(
   "/api",
   companyRoutes
 );
-
 
 app.use(
   "/api",
   contactRoutes
 );
 
-
 app.use(
   "/api",
   leadRoutes
 );
 
+app.use(
+  "/api",
+  financialReviewRoutes
+);
+
+app.use(
+  "/api",
+  technicalReviewRoutes
+);
 
 app.use(
   "/api",
   approvedLeadBoardRoutes
 );
 
-
 app.use(
   "/api",
   teamAllocationRoutes
 );
-
 
 app.use(
   "/api",
   teamProgressRoutes
 );
 
-
 app.use(
   "/api",
   projectCompletionRoutes
 );
 
+app.use(
+  "/api",
+  calendarRoutes
+);
+
+app.use(
+  "/api",
+  chatRoutes
+);
+
+app.use(
+  "/api",
+  pipelineRoutes
+);
+
+app.use(
+  "/api",
+  dashboardPipelineRoutes
+);
 
 /*
  * =========================================================
@@ -388,13 +315,11 @@ app.use(
       .status(404)
       .json({
         success: false,
-
         message:
           `Route not found: ${req.method} ${req.originalUrl}`,
       });
   }
 );
-
 
 /*
  * =========================================================
@@ -405,30 +330,24 @@ app.use(
 app.use(
   (
     error: Error,
-    _req:
-      express.Request,
-    res:
-      express.Response,
-    _next:
-      express.NextFunction
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction
   ) => {
     console.error(
       "GLOBAL SERVER ERROR:",
       error
     );
 
-
     return res
       .status(500)
       .json({
         success: false,
-
         message:
           error.message ||
           "Internal server error",
       });
   }
 );
-
 
 export default app;
