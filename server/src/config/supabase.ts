@@ -1,5 +1,20 @@
-import { createClient } from "@supabase/supabase-js";
-import { env } from "./env";
+import {
+  createClient,
+} from "@supabase/supabase-js";
+
+import {
+  env,
+} from "./env";
+
+/*
+ * =========================================================
+ * COMMON SERVER AUTH OPTIONS
+ * =========================================================
+ *
+ * The backend does not need browser-style
+ * session persistence.
+ * =========================================================
+ */
 
 const serverAuthOptions = {
   auth: {
@@ -10,43 +25,81 @@ const serverAuthOptions = {
 };
 
 /*
- * Used mainly to validate Supabase Auth JWTs.
+ * =========================================================
+ * AUTH CLIENT
+ * =========================================================
+ *
+ * Used to validate user access tokens.
+ *
+ * Example:
+ *
+ * supabaseAuth.auth.getUser(accessToken)
+ *
+ * Uses the publishable key because this client
+ * represents normal Supabase Auth access.
+ * =========================================================
  */
-export const supabaseAuth = createClient(
-  env.supabaseUrl,
-  env.supabasePublishableKey,
-  serverAuthOptions
-);
+
+export const supabaseAuth =
+  createClient(
+    env.supabaseUrl,
+    env.supabasePublishableKey,
+    serverAuthOptions
+  );
 
 /*
- * ADMIN client.
+ * =========================================================
+ * ADMIN CLIENT
+ * =========================================================
  *
- * This bypasses Row Level Security.
- * Do not use this for ordinary user requests unless
- * the operation genuinely requires elevated privileges.
+ * Uses the backend-only Supabase secret key.
+ *
+ * This client has elevated privileges and can bypass
+ * Row Level Security where appropriate.
+ *
+ * NEVER send env.supabaseSecretKey to the frontend.
+ * =========================================================
  */
-export const supabaseAdmin = createClient(
-  env.supabaseUrl,
-  env.supabaseSecretKey,
-  serverAuthOptions
-);
+
+export const supabaseAdmin =
+  createClient(
+    env.supabaseUrl,
+    env.supabaseSecretKey,
+    serverAuthOptions
+  );
 
 /*
- * Normal database client operating as the currently
- * logged-in user.
+ * =========================================================
+ * USER-SCOPED DATABASE CLIENT
+ * =========================================================
  *
- * RLS can therefore identify the user with auth.uid().
+ * Creates a Supabase client operating as the currently
+ * authenticated user.
+ *
+ * The user's access token is passed in the
+ * Authorization header so Supabase RLS can use:
+ *
+ * auth.uid()
+ * =========================================================
  */
+
 export const createUserSupabase = (
   accessToken: string
 ) => {
+  if (!accessToken) {
+    throw new Error(
+      "Access token is required to create a user Supabase client"
+    );
+  }
+
   return createClient(
     env.supabaseUrl,
     env.supabasePublishableKey,
     {
       global: {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization:
+            `Bearer ${accessToken}`,
         },
       },
 
