@@ -1143,7 +1143,7 @@ export default function FinancialReviewPage() {
 
 
                 <Detail
-                  label="Estimated Value"
+                  label="Estimated Budget"
                   value={
                     getLeadValue(
                       selectedLead
@@ -1543,26 +1543,81 @@ function getLeadValue(
     FinancialReviewLead
 ) {
 
+  /*
+   * FinancialReviewLead may not currently declare
+   * every budget field used by older/newer API responses.
+   *
+   * Cast only for reading these optional fields so the
+   * rest of the page keeps its existing strong type.
+   */
+  const budgetLead =
+    lead as FinancialReviewLead & {
+      estimated_budget?:
+        number | string | null;
+
+      estimatedBudget?:
+        number | string | null;
+
+      estimated_value?:
+        number | string | null;
+
+      estimatedValue?:
+        number | string | null;
+
+      value?:
+        number | string | null;
+
+      budget?:
+        number | string | null;
+    };
+
+
   const amount =
-    lead.estimated_value ??
-    lead.value ??
-    lead.budget;
+    budgetLead
+      .estimated_budget ??
+    budgetLead
+      .estimatedBudget ??
+    budgetLead
+      .estimated_value ??
+    budgetLead
+      .estimatedValue ??
+    budgetLead
+      .value ??
+    budgetLead
+      .budget;
 
 
   if (
     amount ===
       undefined ||
     amount ===
-      null
+      null ||
+    amount ===
+      ""
   ) {
 
     return "Not specified";
   }
 
 
-  return Number(
-    amount
-  ).toLocaleString();
+  const numericAmount =
+    Number(amount);
+
+
+  if (
+    Number.isNaN(
+      numericAmount
+    )
+  ) {
+
+    return String(
+      amount
+    );
+  }
+
+
+  return numericAmount
+    .toLocaleString();
 }
 
 
